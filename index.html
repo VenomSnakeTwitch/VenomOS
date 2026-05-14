@@ -1,0 +1,2295 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VenomOS - Ultra Edition</title>
+  <style>
+    :root {
+      --accent: #00ff9d;
+      --accent-dim: rgba(0, 255, 157, .20);
+      --glass: rgba(15, 25, 22, .88);
+      --glass-strong: rgba(8, 13, 11, .96);
+      --border: rgba(255,255,255,.13);
+      --text: #eafff7;
+      --muted: #a9c9bd;
+      --danger: #ff4d6d;
+      --taskbar-height: 52px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; }
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      overflow: hidden;
+      user-select: none;
+      background:
+        radial-gradient(circle at 18% 20%, rgba(0,255,157,.25), transparent 28%),
+        radial-gradient(circle at 82% 28%, rgba(54,181,255,.17), transparent 30%),
+        radial-gradient(circle at center, #0b2e24 0%, #050a09 100%);
+    }
+    body.theme-blue {
+      background:
+        radial-gradient(circle at 20% 20%, rgba(54,181,255,.27), transparent 30%),
+        radial-gradient(circle at center, #0b1d2e 0%, #050709 100%);
+    }
+    body.theme-dark { background: radial-gradient(circle at center, #10201b 0%, #020303 100%); }
+    body::after {
+      content: "VENOMOS";
+      position: fixed;
+      right: 4vw;
+      bottom: 9vh;
+      font-size: clamp(48px, 10vw, 150px);
+      font-weight: 900;
+      letter-spacing: .14em;
+      color: rgba(255,255,255,.045);
+      pointer-events: none;
+    }
+
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; color: inherit; }
+    input, textarea, select { user-select: text; }
+
+    .desktop {
+      height: calc(100vh - var(--taskbar-height));
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 92px);
+      grid-auto-rows: 102px;
+      gap: 10px;
+      align-content: start;
+    }
+    .icon {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-radius: 10px;
+      cursor: pointer;
+      text-shadow: 1px 1px 3px #000;
+    }
+    .icon:hover { background: rgba(255,255,255,.1); }
+    .icon-img { font-size: 40px; margin-bottom: 6px; }
+    .icon-label { font-size: 12px; }
+
+    .taskbar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: var(--taskbar-height);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 10px;
+      background: var(--glass-strong);
+      border-top: 1px solid var(--border);
+      backdrop-filter: blur(18px);
+    }
+    .start-trigger {
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #00140d;
+      font-weight: 900;
+      font-size: 18px;
+    }
+    #running-apps { display: flex; gap: 6px; flex: 1; overflow: hidden; }
+    .task-btn {
+      height: 36px;
+      min-width: 42px;
+      max-width: 180px;
+      padding: 0 11px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border-radius: 9px;
+      border: 1px solid rgba(255,255,255,.11);
+      background: rgba(255,255,255,.07);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .task-btn.active { background: var(--accent-dim); border-color: rgba(0,255,157,.42); }
+    .clock { min-width: 92px; text-align: right; font-size: 12px; }
+
+    .start-menu {
+      position: fixed;
+      left: 10px;
+      bottom: 62px;
+      width: 390px;
+      height: min(540px, calc(100vh - 80px));
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--glass-strong);
+      backdrop-filter: blur(24px);
+      box-shadow: 0 24px 70px rgba(0,0,0,.45);
+    }
+    .start-menu.active { display: flex; }
+    .start-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .start-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 13px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--accent), #36b5ff);
+      color: #00140d;
+      font-size: 22px;
+      font-weight: 900;
+    }
+    .start-search, .input, .url-bar {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: 10px;
+      outline: none;
+      border: 1px solid var(--border);
+      color: white;
+      background: rgba(255,255,255,.08);
+    }
+    .menu-section-title {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin: 8px 0 6px 4px;
+    }
+    #startAppList { overflow: auto; padding-right: 4px; }
+    .menu-item {
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-radius: 9px;
+      cursor: pointer;
+    }
+    .menu-item:hover { background: var(--accent-dim); }
+
+    .window {
+      position: absolute;
+      min-width: 320px;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      resize: both;
+      border-radius: 13px;
+      border: 1px solid var(--border);
+      background: var(--glass);
+      backdrop-filter: blur(15px);
+      box-shadow: 0 20px 50px rgba(0,0,0,.5);
+    }
+    .window.maximized {
+      top: 8px !important;
+      left: 8px !important;
+      width: calc(100vw - 16px) !important;
+      height: calc(100vh - var(--taskbar-height) - 16px) !important;
+      resize: none;
+    }
+    .titlebar {
+      height: 43px;
+      padding: 0 10px 0 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.06);
+      cursor: move;
+    }
+    .titlebar strong { font-size: 13px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .title-controls { display: flex; gap: 7px; margin-left: 12px; }
+    .title-controls button {
+      width: 28px;
+      height: 27px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255,255,255,.08);
+    }
+    .title-controls button:hover { background: rgba(255,255,255,.18); }
+    .title-controls .close:hover { background: var(--danger); }
+    .content { flex: 1; padding: 15px; overflow: auto; user-select: text; }
+    .content * { user-select: text; }
+
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .btn {
+      padding: 8px 12px;
+      border-radius: 9px;
+      border: 1px solid rgba(0,255,157,.28);
+      background: var(--accent-dim);
+      color: var(--text);
+    }
+    .btn:hover { background: rgba(0,255,157,.30); }
+    .danger { border-color: rgba(255,77,109,.38); background: rgba(255,77,109,.16); }
+
+    .file-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .file-table th, .file-table td { padding: 10px; border-bottom: 1px solid rgba(255,255,255,.08); text-align: left; }
+    .file-table th { color: var(--muted); font-weight: 600; }
+    .file-row { cursor: pointer; }
+    .file-row:hover { background: rgba(255,255,255,.06); }
+    .file-row.selected { background: var(--accent-dim); outline: 1px solid rgba(0,255,157,.28); }
+    .status { color: var(--muted); font-size: 12px; margin-top: 10px; }
+
+    .notes-area {
+      width: 100%;
+      height: calc(100% - 50px);
+      min-height: 300px;
+      padding: 12px;
+      resize: none;
+      outline: none;
+      color: white;
+      line-height: 1.45;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,.20);
+    }
+    .term {
+      min-height: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,255,157,.18);
+      background: rgba(0,0,0,.36);
+      color: var(--accent);
+      font-family: "Courier New", monospace;
+      line-height: 1.45;
+    }
+    .term input { width: 70%; border: none; outline: none; color: var(--accent); background: transparent; font: inherit; }
+    .browser-nav { display: flex; gap: 6px; margin-bottom: 10px; }
+    .calc-grid { max-width: 330px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: auto; }
+    .calc-display { grid-column: 1 / -1; min-height: 58px; padding: 14px; text-align: right; font-size: 26px; overflow: hidden; border-radius: 12px; border: 1px solid var(--border); background: rgba(0,0,0,.32); }
+    .calc-grid button { min-height: 48px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255,255,255,.08); }
+    .calc-grid .eq { color: #00140d; background: var(--accent); font-weight: 900; }
+    .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+    .panel { padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: rgba(255,255,255,.05); }
+    .panel label { display: block; color: var(--muted); margin-bottom: 8px; }
+    .wallpaper-preview {
+      width: 100%;
+      height: 92px;
+      margin-top: 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background:
+        radial-gradient(circle at 18% 20%, rgba(0,255,157,.25), transparent 28%),
+        radial-gradient(circle at 82% 28%, rgba(54,181,255,.17), transparent 30%),
+        radial-gradient(circle at center, #0b2e24 0%, #050a09 100%);
+      background-size: cover;
+      background-position: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .wallpaper-preview::after {
+      content: "V";
+      position: absolute;
+      right: 10px;
+      bottom: 6px;
+      color: rgba(255,255,255,.35);
+      font-size: 34px;
+      font-weight: 900;
+    }
+    .setting-help { color: var(--muted); font-size: 12px; line-height: 1.35; margin-top: 8px; }
+
+    .boot-screen, .login-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 30000;
+      display: none;
+      place-items: center;
+      background:
+        radial-gradient(circle at 25% 20%, rgba(0,255,157,.18), transparent 30%),
+        radial-gradient(circle at 80% 30%, rgba(54,181,255,.12), transparent 32%),
+        #020504;
+    }
+    .boot-screen.active, .login-screen.active { display: grid; }
+    .boot-card, .login-card {
+      width: min(580px, calc(100vw - 32px));
+      padding: 32px;
+      border-radius: 26px;
+      border: 1px solid rgba(0,255,157,.32);
+      background: rgba(4,22,17,.92);
+      box-shadow: 0 0 90px rgba(0,255,157,.14);
+      text-align: center;
+    }
+    .boot-logo, .login-logo {
+      width: 86px;
+      height: 86px;
+      margin: 0 auto 16px;
+      display: grid;
+      place-items: center;
+      border-radius: 26px;
+      background: linear-gradient(135deg, var(--accent), #36b5ff);
+      color: #00140d;
+      font-size: 38px;
+      font-weight: 950;
+      box-shadow: 0 0 42px rgba(0,255,157,.20);
+    }
+    .boot-title { font-size: 38px; font-weight: 950; letter-spacing: .10em; }
+    .boot-subtitle, .login-hint { color: var(--muted); margin-top: 8px; min-height: 22px; }
+    .boot-line {
+      height: 3px;
+      margin: 22px auto 0;
+      width: 160px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      animation: bootPulse 1s ease-in-out infinite;
+    }
+    @keyframes bootPulse { 0%,100% { opacity: .35; transform: scaleX(.70); } 50% { opacity: 1; transform: scaleX(1); } }
+    .profile-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+      margin: 18px 0 14px;
+      max-height: 190px;
+      overflow: auto;
+    }
+    .profile-tile {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(255,255,255,.06);
+      padding: 14px 10px;
+      cursor: pointer;
+      transition: .18s;
+    }
+    .profile-tile:hover, .profile-tile.active {
+      background: var(--accent-dim);
+      border-color: rgba(0,255,157,.40);
+      transform: translateY(-1px);
+    }
+    .profile-avatar {
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 8px;
+      background: linear-gradient(135deg, var(--accent), #36b5ff);
+      color: #00140d;
+      font-weight: 950;
+      font-size: 24px;
+    }
+    .login-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+
+
+    .player-shell {
+      display: grid;
+      grid-template-columns: 165px 1fr;
+      gap: 16px;
+      height: 100%;
+      min-height: 350px;
+    }
+    .player-cone {
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background:
+        radial-gradient(circle at 42% 18%, rgba(255,190,70,.42), transparent 34%),
+        linear-gradient(160deg, rgba(255,140,0,.34), rgba(0,0,0,.22));
+    }
+    .cone-icon {
+      font-size: 86px;
+      filter: drop-shadow(0 14px 18px rgba(0,0,0,.46));
+    }
+    .player-main {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .track-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .track-meta {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .player-screen {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      background: rgba(0,0,0,.24);
+      margin-bottom: 12px;
+    }
+    .seek, .volume {
+      accent-color: var(--accent);
+    }
+    .seek {
+      width: 100%;
+    }
+    .player-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .volume {
+      width: 120px;
+    }
+    .playlist {
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: auto;
+      min-height: 120px;
+      max-height: 170px;
+      background: rgba(0,0,0,.18);
+    }
+    .playlist-item {
+      padding: 9px 11px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      cursor: pointer;
+    }
+    .playlist-item:hover { background: rgba(255,255,255,.07); }
+    .playlist-item.active {
+      background: rgba(255,140,0,.20);
+      outline: 1px solid rgba(255,140,0,.25);
+    }
+    .playlist-item span:last-child {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+
+    .gallery-shell {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 14px;
+      height: 100%;
+      min-height: 380px;
+    }
+    .gallery-left, .gallery-preview {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(0,0,0,.18);
+      overflow: hidden;
+      min-height: 0;
+    }
+    .gallery-left {
+      display: flex;
+      flex-direction: column;
+    }
+    .gallery-tools {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+    .gallery-path {
+      width: 100%;
+      font-size: 12px;
+      color: var(--muted);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+    .gallery-grid {
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+      gap: 9px;
+      overflow: auto;
+      align-content: start;
+    }
+    .gallery-thumb {
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 12px;
+      background: rgba(255,255,255,.06);
+      padding: 6px;
+      cursor: pointer;
+      min-width: 0;
+    }
+    .gallery-thumb:hover, .gallery-thumb.active {
+      background: var(--accent-dim);
+      border-color: rgba(0,255,157,.35);
+    }
+    .gallery-thumb img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      display: block;
+      border-radius: 8px;
+      background: rgba(0,0,0,.25);
+    }
+    .gallery-thumb div {
+      margin-top: 5px;
+      font-size: 11px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .gallery-preview {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      padding: 12px;
+      gap: 10px;
+    }
+    .gallery-preview-title {
+      font-weight: 800;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .gallery-preview-stage {
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.08);
+      overflow: hidden;
+    }
+    .gallery-preview-stage img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .gallery-empty {
+      color: var(--muted);
+      text-align: center;
+      padding: 20px;
+      line-height: 1.45;
+    }
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 40000;
+      display: none;
+      place-items: center;
+      background: rgba(0,0,0,.88);
+      padding: 58px 22px 22px;
+    }
+    .lightbox.active { display: grid; }
+    .lightbox img {
+      max-width: 96vw;
+      max-height: 88vh;
+      object-fit: contain;
+      border-radius: 14px;
+      box-shadow: 0 22px 80px rgba(0,0,0,.65);
+    }
+    .lightbox-close {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+    }
+    @media (max-width: 760px) {
+      .gallery-shell { grid-template-columns: 1fr; grid-template-rows: 210px 1fr; }
+      .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+    }
+
+    .twitch-shell {
+      height: 100%;
+      min-height: 430px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 12px;
+    }
+    .twitch-top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(145, 70, 255, .12);
+    }
+    .twitch-logo {
+      width: 38px; height: 38px; border-radius: 11px;
+      display: grid; place-items: center;
+      background: #9146ff; color: white; font-weight: 900;
+      box-shadow: 0 12px 28px rgba(145,70,255,.22);
+    }
+    .twitch-channel { flex: 1; min-width: 190px; }
+    .twitch-layout {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(360px, 1.55fr) minmax(320px, .9fr);
+      gap: 12px;
+    }
+    .twitch-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(0,0,0,.24);
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .twitch-card-title {
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      color: var(--muted);
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .twitch-frame { flex: 1; width: 100%; min-height: 330px; border: 0; background: #0e0e10; }
+    .twitch-help { color: var(--muted); font-size: 12px; line-height: 1.4; margin-left: 50px; flex-basis: 100%; }
+    @media (max-width: 900px) {
+      .twitch-layout { grid-template-columns: 1fr; grid-template-rows: minmax(280px, 1fr) minmax(330px, 1fr); }
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20000;
+      display: none;
+      place-items: center;
+      background: radial-gradient(circle at center, rgba(0,255,157,.16), transparent 35%), #020504;
+    }
+    .overlay.active { display: grid; }
+    .overlay-card {
+      width: min(540px, calc(100vw - 32px));
+      padding: 32px;
+      text-align: center;
+      border-radius: 24px;
+      border: 1px solid rgba(0,255,157,.32);
+      background: rgba(4,22,17,.90);
+      box-shadow: 0 0 80px rgba(0,255,157,.12);
+    }
+    .big-logo {
+      width: 78px;
+      height: 78px;
+      margin: 0 auto 16px;
+      display: grid;
+      place-items: center;
+      border-radius: 24px;
+      background: linear-gradient(135deg, var(--accent), #36b5ff);
+      color: #00140d;
+      font-size: 34px;
+      font-weight: 900;
+    }
+    .spinner {
+      width: 44px;
+      height: 44px;
+      margin: 24px auto 18px;
+      border-radius: 50%;
+      border: 4px solid rgba(255,255,255,.15);
+      border-top-color: var(--accent);
+      animation: spin .9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .progress-shell { height: 10px; border-radius: 999px; overflow: hidden; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.08); }
+    .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), #36b5ff); transition: width .35s; }
+    .toast-zone { position: fixed; right: 14px; bottom: 66px; z-index: 12000; display: flex; flex-direction: column; gap: 8px; }
+    .toast { min-width: 240px; max-width: 340px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--glass-strong); box-shadow: 0 16px 42px rgba(0,0,0,.38); }
+
+
+
+    .fullscreen-prompt {
+      position: fixed;
+      inset: 0;
+      z-index: 60000;
+      display: none;
+      place-items: center;
+      background:
+        radial-gradient(circle at center, rgba(0,255,157,.20), transparent 36%),
+        rgba(0,0,0,.94);
+      backdrop-filter: blur(12px);
+    }
+    .fullscreen-prompt.active { display: grid; }
+    .fullscreen-card {
+      width: min(520px, calc(100vw - 32px));
+      padding: 30px;
+      text-align: center;
+      border-radius: 24px;
+      border: 1px solid rgba(0,255,157,.34);
+      background: rgba(4,22,17,.92);
+      box-shadow: 0 0 80px rgba(0,255,157,.14);
+    }
+    .fullscreen-card h2 { margin: 10px 0 8px; letter-spacing: .04em; }
+    .fullscreen-card p { color: var(--muted); line-height: 1.45; margin-bottom: 18px; }
+    .fullscreen-card .btn { min-width: 210px; }
+
+    @media (max-width: 700px) {
+      .start-menu { width: calc(100vw - 20px); }
+      .window { top: 8px !important; left: 8px !important; width: calc(100vw - 16px) !important; height: calc(100vh - var(--taskbar-height) - 16px) !important; resize: none; }
+      .task-btn span:last-child { display: none; }
+      .clock { font-size: 11px; min-width: 74px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="fullscreen-prompt" id="fullscreenPrompt">
+    <div class="fullscreen-card">
+      <div class="big-logo">V</div>
+      <h2>Vollbildmodus starten</h2>
+      <p>Browser erlauben echten Vollbildmodus meistens erst nach einem Klick. Klicke einmal, damit VenomOS im Vollbild startet.</p>
+      <button class="btn" id="fullscreenStartButton">VenomOS im Vollbild starten</button>
+      <p style="font-size:12px; margin-top:12px; margin-bottom:0;">Mit ESC kannst du den Vollbildmodus später wieder verlassen.</p>
+    </div>
+  </div>
+
+
+  <div class="boot-screen active" id="bootScreen">
+    <div class="boot-card">
+      <div class="boot-logo">V</div>
+      <div class="boot-title">VenomOS</div>
+      <p class="boot-subtitle" id="bootStatus">System wird initialisiert...</p>
+      <div class="spinner"></div>
+      <div class="progress-shell"><div class="progress-bar" id="bootProgress"></div></div>
+      <div class="boot-line"></div>
+    </div>
+  </div>
+
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="login-logo">V</div>
+      <h1>VenomOS Login</h1>
+      <p style="color:var(--muted); margin-top:6px;">Wähle dein Profil und melde dich an.</p>
+      <div class="profile-list" id="profileList"></div>
+      <input class="input" type="password" id="loginPassword" placeholder="Passwort, falls gesetzt">
+      <div class="login-actions">
+        <button class="btn" id="loginButton">Anmelden</button>
+        <button class="btn" id="newProfileButton">Neues Profil</button>
+        <button class="btn danger" id="deleteProfileButton">Profil löschen</button>
+      </div>
+      <p class="login-hint" id="loginHint">Standardprofil: VenomSnake ohne Passwort.</p>
+    </div>
+  </div>
+
+  <div class="desktop" id="desktop"></div>
+
+  <div class="start-menu" id="startMenu">
+    <div class="start-head">
+      <div class="start-logo">V</div>
+      <div style="flex:1">
+        <h3 style="color:var(--accent); margin-bottom:6px;">VenomOS Pro</h3>
+        <input class="start-search" id="startSearch" placeholder="Apps suchen...">
+      </div>
+    </div>
+    <div class="menu-section-title">Apps</div>
+    <div id="startAppList"></div>
+    <div style="margin-top:auto; border-top:1px solid var(--border); padding-top:10px;">
+      <div class="menu-item" data-action="run"><span>▶️</span> Ausführen</div>
+      <div class="menu-item" data-action="restart"><span>🔄</span> Neustarten</div>
+      <div class="menu-item" data-action="lock"><span>🔒</span> Sperren</div>
+    </div>
+  </div>
+
+  <div class="taskbar">
+    <button class="start-trigger" id="startButton">V</button>
+    <div id="running-apps"></div>
+    <div class="clock" id="clock">00:00</div>
+  </div>
+
+  <div class="overlay" id="restartScreen">
+    <div class="overlay-card">
+      <div class="big-logo">V</div>
+      <h1 style="letter-spacing:.08em;">VenomOS</h1>
+      <p id="restartStatus" style="color:var(--muted); margin-top:8px; min-height:24px;">Neustart wird vorbereitet...</p>
+      <div class="spinner"></div>
+      <div class="progress-shell"><div class="progress-bar" id="restartProgress"></div></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="lockScreen">
+    <div class="overlay-card">
+      <div class="big-logo">V</div>
+      <h1 id="lockTime">00:00</h1>
+      <p id="lockDate" style="color:var(--muted); margin:8px 0 20px;">Heute</p>
+      <button class="btn" id="unlockButton">Entsperren</button>
+    </div>
+  </div>
+
+
+  <div class="lightbox" id="galleryLightbox">
+    <button class="btn lightbox-close" id="galleryLightboxClose">✕ Schließen</button>
+    <img id="galleryLightboxImg" alt="Bildvorschau">
+  </div>
+
+  <div class="toast-zone" id="toastZone"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const ROOT = "C:/";
+  const DESKTOP_PATH = "C:/Users/VenomSnake/Desktop";
+  const DOCUMENTS_PATH = "C:/Users/VenomSnake/Dokumente";
+  const TRASH_PATH = "C:/Papierkorb";
+
+  const apps = {
+    files: { name: "Explorer", icon: "📁", desktop: true, w: 850, h: 530 },
+    player: { name: "Venom Player", icon: "🟧", desktop: true, w: 720, h: 500 },
+    gallery: { name: "Bildgalerie", icon: "🖼️", desktop: true, w: 860, h: 570 },
+    twitch: { name: "Twitch", icon: "💜", desktop: true, w: 980, h: 620 },
+    notes: { name: "Notizblock", icon: "📝", desktop: true, w: 730, h: 500 },
+    term: { name: "Terminal", icon: "⌨️", desktop: true, w: 760, h: 460 },
+    browser: { name: "Internet Browser", icon: "🌐", desktop: true, w: 720, h: 460 },
+    calc: { name: "Rechner", icon: "🧮", desktop: true, w: 380, h: 500 },
+    settings: { name: "Einstellungen", icon: "⚙️", desktop: true, w: 720, h: 520 },
+    taskmanager: { name: "Task-Manager", icon: "📊", desktop: true, w: 720, h: 440 },
+    run: { name: "Ausführen", icon: "▶️", desktop: false, w: 480, h: 230 },
+    viewer: { name: "Datei-Viewer", icon: "👁️", desktop: false, w: 720, h: 520 },
+    about: { name: "Über VenomOS", icon: "💻", desktop: false, w: 600, h: 420 }
+  };
+
+  let fs = loadFS();
+  let zIndex = 100;
+  let runningWindows = {};
+  let activeWindow = null;
+  let clipboard = null;
+  let calcValue = "0";
+  let calcDone = false;
+  let profiles = loadProfiles();
+  let currentProfileId = localStorage.getItem("venomOS.currentProfileId") || profiles[0].id;
+  let selectedProfileId = currentProfileId;
+
+  function el(id) { return document.getElementById(id); }
+  function nowStamp() { return new Date().toLocaleString("de-DE"); }
+  function esc(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, function (m) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;" }[m];
+    });
+  }
+  function makeProfileId() { return "profile-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6); }
+  function loadProfiles() {
+    try {
+      const raw = localStorage.getItem("venomOS.profiles");
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list) && list.length) return list;
+      }
+    } catch (e) {}
+    const fallback = [{ id: "venom-default", name: localStorage.getItem("venomOS.username") || "VenomSnake", password: "", avatar: "V", created: nowStamp() }];
+    localStorage.setItem("venomOS.profiles", JSON.stringify(fallback));
+    return fallback;
+  }
+  function saveProfiles() { localStorage.setItem("venomOS.profiles", JSON.stringify(profiles)); }
+  function getProfile(id) { return profiles.find(function (p) { return p.id === id; }) || profiles[0]; }
+  function getCurrentProfile() { return getProfile(currentProfileId); }
+  function profileInitial(profile) { return ((profile && (profile.avatar || profile.name)) || "V").charAt(0).toUpperCase(); }
+  function renderProfiles() {
+    const list = el("profileList");
+    if (!list) return;
+    list.innerHTML = "";
+    profiles.forEach(function (profile) {
+      const tile = document.createElement("div");
+      tile.className = "profile-tile" + (profile.id === selectedProfileId ? " active" : "");
+      tile.innerHTML = '<div class="profile-avatar">' + esc(profileInitial(profile)) + '</div><strong>' + esc(profile.name) + '</strong><br><small style="color:var(--muted)">' + (profile.password ? 'Passwort aktiv' : 'Ohne Passwort') + '</small>';
+      tile.addEventListener("click", function () {
+        selectedProfileId = profile.id;
+        el("loginPassword").value = "";
+        renderProfiles();
+        setTimeout(function () { el("loginPassword").focus(); }, 20);
+      });
+      list.appendChild(tile);
+    });
+  }
+  function showLogin(message) {
+    selectedProfileId = currentProfileId || profiles[0].id;
+    renderProfiles();
+    el("loginHint").textContent = message || "Standardprofil: VenomSnake ohne Passwort.";
+    el("loginPassword").value = "";
+    el("loginScreen").classList.add("active");
+    setTimeout(function () { el("loginPassword").focus(); }, 60);
+  }
+  function hideLogin() { el("loginScreen").classList.remove("active"); }
+  function loginSelectedProfile() {
+    const profile = getProfile(selectedProfileId);
+    const typed = el("loginPassword").value;
+    if ((profile.password || "") !== typed) {
+      el("loginHint").textContent = "Falsches Passwort für " + profile.name + ".";
+      return;
+    }
+    currentProfileId = profile.id;
+    localStorage.setItem("venomOS.currentProfileId", currentProfileId);
+    localStorage.setItem("venomOS.username", profile.name);
+    hideLogin();
+    applySettings();
+    renderStartMenu();
+    showToast("Willkommen", "Angemeldet als " + profile.name + ".");
+  }
+  function createProfile() {
+    const name = prompt("Profilname:", "Neuer Benutzer");
+    if (!name) return;
+    const password = prompt("Passwort optional. Leer lassen für kein Passwort:", "") || "";
+    const profile = { id: makeProfileId(), name: name.trim(), password: password, avatar: name.trim().charAt(0).toUpperCase() || "V", created: nowStamp() };
+    profiles.push(profile);
+    selectedProfileId = profile.id;
+    saveProfiles();
+    renderProfiles();
+    el("loginHint").textContent = "Profil erstellt: " + profile.name;
+  }
+  function deleteSelectedProfile() {
+    if (profiles.length <= 1) { el("loginHint").textContent = "Mindestens ein Profil muss erhalten bleiben."; return; }
+    const profile = getProfile(selectedProfileId);
+    if (!confirm("Profil " + profile.name + " wirklich löschen?")) return;
+    profiles = profiles.filter(function (p) { return p.id !== profile.id; });
+    if (currentProfileId === profile.id) currentProfileId = profiles[0].id;
+    selectedProfileId = profiles[0].id;
+    saveProfiles();
+    localStorage.setItem("venomOS.currentProfileId", currentProfileId);
+    renderProfiles();
+  }
+  function startBootAnimation(message) {
+    const boot = el("bootScreen");
+    const status = el("bootStatus");
+    const progress = el("bootProgress");
+    if (!boot) return showLogin();
+    el("loginScreen").classList.remove("active");
+    boot.classList.add("active");
+    progress.style.width = "0%";
+    const steps = [
+      { text: "BIOS prüft Venom-Hardware...", pct: 16, delay: 450 },
+      { text: "Kernel wird geladen...", pct: 34, delay: 520 },
+      { text: "Dateisystem wird gemountet...", pct: 55, delay: 520, action: saveFS },
+      { text: "Dienste werden gestartet...", pct: 78, delay: 520 },
+      { text: "Login wird vorbereitet...", pct: 100, delay: 480 }
+    ];
+    let i = 0;
+    function next() {
+      const step = steps[i];
+      status.textContent = step.text;
+      progress.style.width = step.pct + "%";
+      if (step.action) step.action();
+      i++;
+      if (i < steps.length) setTimeout(next, step.delay);
+      else setTimeout(function () { boot.classList.remove("active"); showLogin(message); }, step.delay);
+    }
+    setTimeout(next, 250);
+  }
+  function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
+  function folder(name) { return { type: "folder", name: name, created: nowStamp(), modified: nowStamp() }; }
+  function file(name, content, mime, encoding) {
+    return { type: "file", name: name, content: content || "", mime: mime || "text/plain", encoding: encoding || "text", created: nowStamp(), modified: nowStamp(), size: (content || "").length };
+  }
+  function makeDefaultFS() {
+    const obj = {};
+    obj[ROOT] = [folder("Users"), folder("Programme"), folder("System32"), folder("Papierkorb")];
+    obj["C:/Users"] = [folder("VenomSnake")];
+    obj["C:/Users/VenomSnake"] = [folder("Desktop"), folder("Dokumente"), folder("Bilder"), folder("Musik")];
+    obj[DESKTOP_PATH] = [
+      folder("Songs"),
+      file("Willkommen.txt", "Willkommen bei VenomOS!\n\nDer Explorer ist ein virtuelles Dateisystem im Browser. Du kannst Ordner und Dateien erstellen, öffnen, speichern, kopieren, ausschneiden, einfügen, umbenennen, löschen, importieren und herunterladen."),
+      file("Streamplan.txt", "Montag, Mittwoch und Freitag ab 13:30 Uhr live.")
+    ];
+    obj[DESKTOP_PATH + "/Songs"] = [
+      file("Devil Inside Me.txt", "Songideen, Lyrics und Suno-Prompts sammeln."),
+      file("Metal Time.txt", "Album-Notizen für Metal Time.")
+    ];
+    obj[DOCUMENTS_PATH] = [file("Terminal-Befehle.txt", "help, dir, cd, mkdir, touch, write, cat, rename, del, tree, open, restart")];
+    obj["C:/Users/VenomSnake/Bilder"] = [];
+    obj["C:/Users/VenomSnake/Musik"] = [];
+    obj["C:/Programme"] = [];
+    obj["C:/System32"] = [file("kernel.sys", "VenomOS Kernel v1.1 - HTML Simulation")];
+    obj[TRASH_PATH] = [];
+    return obj;
+  }
+  function loadFS() {
+    try {
+      const raw = localStorage.getItem("venomOS.fs.safe");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed[ROOT] && parsed[DESKTOP_PATH] && parsed[TRASH_PATH]) return parsed;
+      }
+    } catch (e) {}
+    return makeDefaultFS();
+  }
+  function saveFS() {
+    try { localStorage.setItem("venomOS.fs.safe", JSON.stringify(fs)); } catch (e) { showToast("Fehler", "Dateisystem konnte nicht gespeichert werden."); }
+  }
+  function normalizePath(path) {
+    let p = String(path || ROOT).replace(/\\/g, "/").trim();
+    if (p === "C" || p === "C:") return ROOT;
+    if (!p.startsWith("C:/")) p = p.startsWith("/") ? "C:" + p : "C:/" + p;
+    p = p.replace(/\/+/g, "/");
+    if (p.length > 3 && p.endsWith("/")) p = p.slice(0, -1);
+    return p;
+  }
+  function joinPath(base, name) { return normalizePath(base === ROOT ? ROOT + name : base + "/" + name); }
+  function parentPath(path) {
+    const p = normalizePath(path);
+    if (p === ROOT) return ROOT;
+    const parts = p.split("/");
+    parts.pop();
+    const out = parts.join("/");
+    return out === "C:" ? ROOT : out;
+  }
+  function pathName(path) { const p = normalizePath(path); return p === ROOT ? "C:" : p.split("/").pop(); }
+  function getList(path) { return fs[normalizePath(path)] || []; }
+  function itemByName(path, name) { return getList(path).find(function (i) { return i.name === name; }); }
+  function uniqueName(path, name) {
+    const list = getList(path);
+    if (!list.some(function (i) { return i.name === name; })) return name;
+    const dot = name.lastIndexOf(".");
+    const base = dot > 0 ? name.slice(0, dot) : name;
+    const ext = dot > 0 ? name.slice(dot) : "";
+    let n = 2;
+    while (list.some(function (i) { return i.name === base + " (" + n + ")" + ext; })) n++;
+    return base + " (" + n + ")" + ext;
+  }
+  function itemSize(item) {
+    if (item.type === "folder") return "Ordner";
+    const bytes = Number(item.size || (item.content ? item.content.length : 0));
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / 1024 / 1024).toFixed(1) + " MB";
+  }
+  function isImageItem(item) {
+    const mime = item.mime || "";
+    const name = item.name || "";
+    return mime.indexOf("image/") === 0 || /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(name);
+  }
+  function isAudioItem(item) {
+    const mime = item.mime || "";
+    const name = item.name || "";
+    return mime.indexOf("audio/") === 0 || /\.(mp3|wav|ogg|m4a|aac|flac|webm)$/i.test(name);
+  }
+  function iconForFile(item) {
+    const mime = item.mime || "";
+    if (isImageItem(item)) return "🖼️";
+    if (isAudioItem(item)) return "🎵";
+    if (mime.indexOf("pdf") >= 0) return "📕";
+    return "📄";
+  }
+
+
+  function requestVenomFullscreen() {
+    const root = document.documentElement;
+    const fn = root.requestFullscreen || root.webkitRequestFullscreen || root.msRequestFullscreen;
+    if (!fn) return Promise.reject(new Error("Fullscreen API wird nicht unterstützt."));
+    try {
+      const result = fn.call(root);
+      return result && typeof result.then === "function" ? result : Promise.resolve();
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+  function setupAutoFullscreen() {
+    const prompt = el("fullscreenPrompt");
+    const button = el("fullscreenStartButton");
+    if (!prompt || !button) return;
+
+    function isFullscreen() {
+      return !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+    }
+    function hidePrompt() { prompt.classList.remove("active"); }
+    function showPrompt() { if (!isFullscreen()) prompt.classList.add("active"); }
+
+    button.addEventListener("click", function () {
+      requestVenomFullscreen().then(hidePrompt).catch(function () {
+        showToast("Vollbild", "Der Browser hat Vollbild blockiert. Nutze alternativ F11.");
+        hidePrompt();
+      });
+    });
+
+    document.addEventListener("fullscreenchange", function () { if (isFullscreen()) hidePrompt(); });
+    document.addEventListener("webkitfullscreenchange", function () { if (isFullscreen()) hidePrompt(); });
+
+    setTimeout(function () {
+      requestVenomFullscreen().then(hidePrompt).catch(function () {
+        showPrompt();
+      });
+    }, 300);
+  }
+
+  function init() {
+    applySettings();
+    setupAutoFullscreen();
+    renderDesktop();
+    renderStartMenu();
+    updateClock();
+    setInterval(updateClock, 1000);
+    el("startButton").addEventListener("click", toggleStart);
+    el("startSearch").addEventListener("input", function () { renderStartMenu(this.value); });
+    el("unlockButton").addEventListener("click", unlockOS);
+    el("loginButton").addEventListener("click", loginSelectedProfile);
+    el("loginPassword").addEventListener("keydown", function (e) { if (e.key === "Enter") loginSelectedProfile(); });
+    el("newProfileButton").addEventListener("click", createProfile);
+    el("deleteProfileButton").addEventListener("click", deleteSelectedProfile);
+    el("galleryLightboxClose").addEventListener("click", function () { el("galleryLightbox").classList.remove("active"); });
+    el("galleryLightbox").addEventListener("click", function (e) { if (e.target === el("galleryLightbox")) el("galleryLightbox").classList.remove("active"); });
+    document.addEventListener("click", closeStartOnOutsideClick);
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeStart();
+      if (e.ctrlKey && e.key.toLowerCase() === "e") openApp("files", { path: DESKTOP_PATH });
+      if (e.ctrlKey && e.key.toLowerCase() === "n") openApp("notes");
+      if (e.ctrlKey && e.key.toLowerCase() === "r") openRunDialog();
+    });
+    startBootAnimation("Wähle dein Profil und melde dich an.");
+  }
+
+  function renderDesktop() {
+    const desktop = el("desktop");
+    desktop.innerHTML = "";
+    Object.keys(apps).filter(function (key) { return apps[key].desktop; }).forEach(function (key) {
+      const icon = document.createElement("div");
+      icon.className = "icon";
+      icon.innerHTML = '<div class="icon-img">' + apps[key].icon + '</div><div class="icon-label">' + apps[key].name + '</div>';
+      icon.addEventListener("click", function () { openApp(key, key === "files" ? { path: DESKTOP_PATH } : {}); });
+      desktop.appendChild(icon);
+    });
+  }
+  function renderStartMenu(filter) {
+    const q = String(filter || "").toLowerCase().trim();
+    const list = el("startAppList");
+    list.innerHTML = "";
+    Object.keys(apps).filter(function (key) {
+      return key !== "viewer" && (!q || apps[key].name.toLowerCase().indexOf(q) >= 0 || key.indexOf(q) >= 0);
+    }).forEach(function (key) {
+      const item = document.createElement("div");
+      item.className = "menu-item";
+      item.innerHTML = "<span>" + apps[key].icon + "</span> " + apps[key].name;
+      item.addEventListener("click", function () { openApp(key, key === "files" ? { path: DESKTOP_PATH } : {}, true); });
+      list.appendChild(item);
+    });
+  }
+  function toggleStart() {
+    el("startMenu").classList.toggle("active");
+    setTimeout(function () { if (el("startMenu").classList.contains("active")) el("startSearch").focus(); }, 20);
+  }
+  function closeStart() { el("startMenu").classList.remove("active"); }
+  function closeStartOnOutsideClick(e) {
+    const menu = el("startMenu");
+    const start = el("startButton");
+    if (!menu.contains(e.target) && !start.contains(e.target)) closeStart();
+  }
+  document.addEventListener("click", function (e) {
+    const action = e.target.closest("[data-action]");
+    if (!action) return;
+    const a = action.getAttribute("data-action");
+    if (a === "run") openRunDialog();
+    if (a === "restart") restartOS();
+    if (a === "lock") lockOS();
+  });
+
+  function openApp(key, data, fromStartMenu) {
+    if (fromStartMenu) closeStart();
+    data = data || {};
+    const app = apps[key];
+    if (!app) return;
+    const id = "win-" + Math.random().toString(36).slice(2, 10);
+    const count = Object.keys(runningWindows).length;
+    const win = document.createElement("div");
+    win.className = "window";
+    win.id = id;
+    win.dataset.app = key;
+    win.style.zIndex = ++zIndex;
+    win.style.top = 84 + count * 18 + "px";
+    win.style.left = 130 + count * 18 + "px";
+    win.style.width = (app.w || 640) + "px";
+    win.style.height = (app.h || 410) + "px";
+    win.innerHTML = '<div class="titlebar"><strong>' + app.icon + ' ' + app.name + '</strong><div class="title-controls"><button data-win="min">—</button><button data-win="max">□</button><button class="close" data-win="close">✕</button></div></div><div class="content" id="ctx-' + id + '"></div>';
+    document.body.appendChild(win);
+    runningWindows[id] = { id: id, key: key, win: win, minimized: false, state: {}, data: data };
+    win.querySelector('[data-win="min"]').addEventListener("click", function () { minimizeWindow(id); });
+    win.querySelector('[data-win="max"]').addEventListener("click", function () { maximizeWindow(id); });
+    win.querySelector('[data-win="close"]').addEventListener("click", function () { closeWindow(id); });
+    makeDraggable(win);
+    loadAppContent(key, id, data);
+    focusWindow(id);
+    renderTaskbar();
+    return id;
+  }
+  function getCtx(id) { return el("ctx-" + id); }
+  function focusWindow(id) {
+    const item = runningWindows[id];
+    if (!item) return;
+    activeWindow = id;
+    item.minimized = false;
+    item.win.style.display = "flex";
+    item.win.style.zIndex = ++zIndex;
+    renderTaskbar();
+  }
+  function closeWindow(id) {
+    const item = runningWindows[id];
+    if (!item) return;
+    if (item.state && item.state.galleryTimer) { clearInterval(item.state.galleryTimer); item.state.galleryTimer = null; }
+    item.win.remove();
+    delete runningWindows[id];
+    if (activeWindow === id) activeWindow = null;
+    renderTaskbar();
+  }
+  function minimizeWindow(id) {
+    const item = runningWindows[id];
+    if (!item) return;
+    item.minimized = true;
+    item.win.style.display = "none";
+    renderTaskbar();
+  }
+  function maximizeWindow(id) {
+    const item = runningWindows[id];
+    if (!item) return;
+    item.win.classList.toggle("maximized");
+    focusWindow(id);
+  }
+  function renderTaskbar() {
+    const box = el("running-apps");
+    box.innerHTML = "";
+    Object.keys(runningWindows).forEach(function (id) {
+      const item = runningWindows[id];
+      const app = apps[item.key];
+      const btn = document.createElement("button");
+      btn.className = "task-btn" + (activeWindow === id && !item.minimized ? " active" : "");
+      btn.innerHTML = "<span>" + app.icon + "</span><span>" + app.name + "</span>";
+      btn.addEventListener("click", function () { item.minimized || activeWindow !== id ? focusWindow(id) : minimizeWindow(id); });
+      box.appendChild(btn);
+    });
+  }
+  function makeDraggable(win) {
+    let down = false, sx = 0, sy = 0, sl = 0, st = 0;
+    const bar = win.querySelector(".titlebar");
+    win.addEventListener("mousedown", function () { focusWindow(win.id); });
+    bar.addEventListener("mousedown", function (e) {
+      if (e.target.tagName === "BUTTON" || win.classList.contains("maximized")) return;
+      down = true;
+      sx = e.clientX; sy = e.clientY;
+      sl = parseInt(win.style.left, 10) || 0;
+      st = parseInt(win.style.top, 10) || 0;
+      e.preventDefault();
+    });
+    document.addEventListener("mousemove", function (e) {
+      if (!down) return;
+      win.style.left = Math.max(0, sl + e.clientX - sx) + "px";
+      win.style.top = Math.max(0, st + e.clientY - sy) + "px";
+    });
+    document.addEventListener("mouseup", function () { down = false; });
+  }
+
+  function loadAppContent(key, id, data) {
+    if (key === "files") renderExplorer(id, data.path || DESKTOP_PATH);
+    else if (key === "player") renderPlayer(id, data);
+    else if (key === "gallery") renderGallery(id, data);
+    else if (key === "twitch") renderTwitch(id, data);
+    else if (key === "notes") renderNotes(id, data);
+    else if (key === "term") renderTerminal(id, data);
+    else if (key === "browser") renderBrowser(id, data);
+    else if (key === "calc") renderCalc(id);
+    else if (key === "settings") renderSettings(id);
+    else if (key === "taskmanager") renderTaskManager(id);
+    else if (key === "run") renderRun(id);
+    else if (key === "viewer") renderViewer(id, data);
+    else if (key === "about") renderAbout(id);
+  }
+
+  function renderExplorer(id, path) {
+    const item = runningWindows[id];
+    const state = item.state;
+    state.path = normalizePath(path || state.path || DESKTOP_PATH);
+    if (!fs[state.path]) state.path = ROOT;
+    if (!state.selected) state.selected = "";
+    item.win.querySelector(".titlebar strong").textContent = "📁 Explorer - " + pathName(state.path);
+    const c = getCtx(id);
+    c.innerHTML = '<div class="toolbar"><button class="btn" data-ex="up">⬆️ Hoch</button><button class="btn" data-ex="desktop">🏠 Desktop</button><input class="input" style="flex:1;min-width:230px" id="path-' + id + '" value="' + esc(state.path) + '"><button class="btn" data-ex="go">Los</button></div><div class="toolbar"><button class="btn" data-ex="newfolder">📁 Neuer Ordner</button><button class="btn" data-ex="newfile">📄 Neue Textdatei</button><button class="btn" data-ex="import">⬆️ Importieren</button><button class="btn" data-ex="download">⬇️ Download</button><button class="btn" data-ex="copy">📋 Kopieren</button><button class="btn" data-ex="cut">✂️ Ausschneiden</button><button class="btn" data-ex="paste">📌 Einfügen</button><button class="btn" data-ex="rename">✏️ Umbenennen</button><button class="btn danger" data-ex="delete">🗑️ Löschen</button><input type="file" multiple id="fileinput-' + id + '" style="display:none"></div><table class="file-table"><thead><tr><th>Name</th><th>Typ</th><th>Größe</th><th>Geändert</th></tr></thead><tbody id="filebody-' + id + '"></tbody></table><div class="status" id="status-' + id + '"></div>';
+
+    c.querySelector('[data-ex="up"]').addEventListener("click", function () { renderExplorer(id, parentPath(state.path)); });
+    c.querySelector('[data-ex="desktop"]').addEventListener("click", function () { renderExplorer(id, DESKTOP_PATH); });
+    c.querySelector('[data-ex="go"]').addEventListener("click", function () { explorerGo(id); });
+    el("path-" + id).addEventListener("keydown", function (e) { if (e.key === "Enter") explorerGo(id); });
+    c.querySelector('[data-ex="newfolder"]').addEventListener("click", function () { explorerNewFolder(id); });
+    c.querySelector('[data-ex="newfile"]').addEventListener("click", function () { explorerNewFile(id); });
+    c.querySelector('[data-ex="import"]').addEventListener("click", function () { el("fileinput-" + id).click(); });
+    el("fileinput-" + id).addEventListener("change", function (e) { explorerImport(id, e.target.files); });
+    c.querySelector('[data-ex="download"]').addEventListener("click", function () { explorerDownload(id); });
+    c.querySelector('[data-ex="copy"]').addEventListener("click", function () { explorerCopy(id, false); });
+    c.querySelector('[data-ex="cut"]').addEventListener("click", function () { explorerCopy(id, true); });
+    c.querySelector('[data-ex="paste"]').addEventListener("click", function () { explorerPaste(id); });
+    c.querySelector('[data-ex="rename"]').addEventListener("click", function () { explorerRename(id); });
+    c.querySelector('[data-ex="delete"]').addEventListener("click", function () { explorerDelete(id); });
+
+    const body = el("filebody-" + id);
+    const list = getList(state.path).slice().sort(function (a, b) {
+      if (a.type !== b.type) return a.type === "folder" ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+    list.forEach(function (it) {
+      const row = document.createElement("tr");
+      row.className = "file-row" + (state.selected === it.name ? " selected" : "");
+      row.innerHTML = "<td>" + (it.type === "folder" ? "📁" : iconForFile(it)) + " " + esc(it.name) + "</td><td>" + (it.type === "folder" ? "Ordner" : esc(it.mime || "Datei")) + "</td><td>" + itemSize(it) + "</td><td>" + esc(it.modified || "") + "</td>";
+      row.addEventListener("click", function () { state.selected = it.name; renderExplorer(id, state.path); });
+      row.addEventListener("dblclick", function () { explorerOpen(id, it.name); });
+      body.appendChild(row);
+    });
+    el("status-" + id).textContent = list.length + " Element(e) | " + state.path;
+  }
+  function explorerGo(id) {
+    const state = runningWindows[id].state;
+    const p = normalizePath(el("path-" + id).value);
+    if (!fs[p]) return showToast("Explorer", "Pfad nicht gefunden: " + p);
+    state.selected = "";
+    renderExplorer(id, p);
+  }
+  function selectedItem(id) {
+    const state = runningWindows[id].state;
+    if (!state.selected) { showToast("Explorer", "Bitte zuerst etwas auswählen."); return null; }
+    const it = itemByName(state.path, state.selected);
+    if (!it) { state.selected = ""; renderExplorer(id, state.path); return null; }
+    return it;
+  }
+  function explorerOpen(id, name) {
+    const state = runningWindows[id].state;
+    const it = itemByName(state.path, name);
+    if (!it) return;
+    if (it.type === "folder") { state.selected = ""; renderExplorer(id, joinPath(state.path, it.name)); }
+    else if (isImageItem(it)) openApp("gallery", { path: state.path, name: it.name });
+    else if (isAudioItem(it)) openApp("player", { path: state.path, name: it.name });
+    else if (it.encoding === "text" || (it.mime || "").indexOf("text/") === 0) openApp("notes", { path: state.path, name: it.name });
+    else openApp("viewer", { path: state.path, name: it.name });
+  }
+  function explorerNewFolder(id) {
+    const state = runningWindows[id].state;
+    const name = prompt("Ordnername:", "Neuer Ordner");
+    if (!name) return;
+    const clean = uniqueName(state.path, name.trim());
+    getList(state.path).push(folder(clean));
+    fs[joinPath(state.path, clean)] = [];
+    saveFS();
+    renderExplorer(id, state.path);
+  }
+  function explorerNewFile(id) {
+    const state = runningWindows[id].state;
+    const name = prompt("Dateiname:", "Neue Datei.txt");
+    if (!name) return;
+    const clean = uniqueName(state.path, name.trim());
+    getList(state.path).push(file(clean, ""));
+    saveFS();
+    renderExplorer(id, state.path);
+    openApp("notes", { path: state.path, name: clean });
+  }
+  function explorerImport(id, files) {
+    const state = runningWindows[id].state;
+    const arr = Array.prototype.slice.call(files || []);
+    if (!arr.length) return;
+    let done = 0;
+    arr.forEach(function (f) {
+      const reader = new FileReader();
+      const asText = f.type.indexOf("text/") === 0 || /\.(txt|json|html|css|js|md|csv)$/i.test(f.name);
+      reader.onload = function () {
+        const name = uniqueName(state.path, f.name);
+        getList(state.path).push({ type: "file", name: name, content: reader.result, mime: f.type || "application/octet-stream", encoding: asText ? "text" : "dataurl", created: nowStamp(), modified: nowStamp(), size: f.size });
+        done++;
+        if (done === arr.length) { saveFS(); showToast("Explorer", done + " Datei(en) importiert."); renderExplorer(id, state.path); }
+      };
+      if (asText) reader.readAsText(f); else reader.readAsDataURL(f);
+    });
+  }
+  function explorerDownload(id) {
+    const it = selectedItem(id);
+    if (!it) return;
+    if (it.type === "folder") return showToast("Explorer", "Ordner-Download als ZIP ist in dieser HTML-Version nicht eingebaut.");
+    downloadItem(it);
+  }
+  function downloadItem(it) {
+    const a = document.createElement("a");
+    if (it.encoding === "dataurl") a.href = it.content;
+    else a.href = URL.createObjectURL(new Blob([it.content || ""], { type: it.mime || "text/plain" }));
+    a.download = it.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    if (it.encoding !== "dataurl") URL.revokeObjectURL(a.href);
+  }
+  function explorerCopy(id, cut) {
+    const state = runningWindows[id].state;
+    const it = selectedItem(id);
+    if (!it) return;
+    clipboard = { item: clone(it), sourcePath: state.path, cut: cut };
+    showToast("Explorer", (cut ? "Ausgeschnitten: " : "Kopiert: ") + it.name);
+  }
+  function explorerPaste(id) {
+    const state = runningWindows[id].state;
+    if (!clipboard) return showToast("Explorer", "Zwischenablage ist leer.");
+    const item = clone(clipboard.item);
+    item.name = uniqueName(state.path, item.name);
+    item.modified = nowStamp();
+    getList(state.path).push(item);
+    if (item.type === "folder") copyFolderTree(joinPath(clipboard.sourcePath, clipboard.item.name), joinPath(state.path, item.name));
+    if (clipboard.cut) {
+      removeItem(clipboard.sourcePath, clipboard.item.name);
+      clipboard = null;
+    }
+    saveFS();
+    renderExplorer(id, state.path);
+  }
+  function copyFolderTree(src, dest) {
+    fs[dest] = clone(fs[src] || []);
+    (fs[src] || []).filter(function (i) { return i.type === "folder"; }).forEach(function (f) { copyFolderTree(joinPath(src, f.name), joinPath(dest, f.name)); });
+  }
+  function removeFolderTree(path) {
+    (fs[path] || []).filter(function (i) { return i.type === "folder"; }).forEach(function (f) { removeFolderTree(joinPath(path, f.name)); });
+    delete fs[path];
+  }
+  function removeItem(path, name) {
+    const list = getList(path);
+    const index = list.findIndex(function (i) { return i.name === name; });
+    if (index < 0) return null;
+    const it = list.splice(index, 1)[0];
+    if (it.type === "folder") removeFolderTree(joinPath(path, it.name));
+    return it;
+  }
+  function explorerRename(id) {
+    const state = runningWindows[id].state;
+    const it = selectedItem(id);
+    if (!it) return;
+    const newName = prompt("Neuer Name:", it.name);
+    if (!newName || newName === it.name) return;
+    const clean = uniqueName(state.path, newName.trim());
+    if (it.type === "folder") renameFolderPath(joinPath(state.path, it.name), joinPath(state.path, clean));
+    it.name = clean;
+    it.modified = nowStamp();
+    state.selected = clean;
+    saveFS();
+    renderExplorer(id, state.path);
+  }
+  function renameFolderPath(oldPath, newPath) {
+    fs[newPath] = fs[oldPath] || [];
+    delete fs[oldPath];
+    Object.keys(fs).filter(function (p) { return p.indexOf(oldPath + "/") === 0; }).forEach(function (p) {
+      const np = newPath + p.slice(oldPath.length);
+      fs[np] = fs[p];
+      delete fs[p];
+    });
+  }
+  function explorerDelete(id) {
+    const state = runningWindows[id].state;
+    const it = selectedItem(id);
+    if (!it) return;
+    if (!confirm(it.name + " in den Papierkorb verschieben?")) return;
+    const removed = removeItem(state.path, it.name);
+    if (!removed) return;
+    removed.originalPath = state.path;
+    removed.deleted = nowStamp();
+    removed.name = uniqueName(TRASH_PATH, removed.name);
+    getList(TRASH_PATH).push(removed);
+    state.selected = "";
+    saveFS();
+    renderExplorer(id, state.path);
+  }
+
+  function renderGallery(id, data) {
+    data = data || {};
+    const item = runningWindows[id];
+    const state = item.state;
+    state.path = normalizePath(data.path || state.path || "C:/Users/VenomSnake/Bilder");
+    if (!fs[state.path]) state.path = "C:/Users/VenomSnake/Bilder";
+    if (!fs[state.path]) state.path = DESKTOP_PATH;
+    if (!state.selected && data.name) state.selected = data.name;
+
+    item.win.querySelector(".titlebar strong").textContent = "🖼️ Bildgalerie - " + pathName(state.path);
+    getCtx(id).innerHTML =
+      '<div class="gallery-shell">' +
+        '<div class="gallery-left">' +
+          '<div class="gallery-tools">' +
+            '<button class="btn" data-gal="desktop">Desktop</button>' +
+            '<button class="btn" data-gal="bilder">Bilder</button>' +
+            '<button class="btn" data-gal="import">Import</button>' +
+            '<button class="btn" data-gal="slideshow">Slideshow</button>' +
+            '<input type="file" accept="image/*" multiple id="gal-file-' + id + '" style="display:none">' +
+            '<div class="gallery-path" id="gal-path-' + id + '"></div>' +
+          '</div>' +
+          '<div class="gallery-grid" id="gal-grid-' + id + '"></div>' +
+        '</div>' +
+        '<div class="gallery-preview">' +
+          '<div><div class="gallery-preview-title" id="gal-title-' + id + '">Kein Bild ausgewählt</div><div style="color:var(--muted);font-size:12px" id="gal-meta-' + id + '"></div></div>' +
+          '<div class="gallery-preview-stage" id="gal-stage-' + id + '"><div class="gallery-empty">Keine Bilder gefunden.<br>Importiere Bilder oder öffne im Explorer einen Bilder-Ordner.</div></div>' +
+          '<div class="toolbar" style="margin-bottom:0">' +
+            '<button class="btn" data-gal="full">Vollbild</button>' +
+            '<button class="btn" data-gal="wallpaper">Als Hintergrund</button>' +
+            '<button class="btn" data-gal="download">Download</button>' +
+            '<button class="btn danger" data-gal="delete">Löschen</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    const c = getCtx(id);
+    c.querySelector('[data-gal="desktop"]').addEventListener("click", function () { state.selected = ""; renderGallery(id, { path: DESKTOP_PATH }); });
+    c.querySelector('[data-gal="bilder"]').addEventListener("click", function () { state.selected = ""; renderGallery(id, { path: "C:/Users/VenomSnake/Bilder" }); });
+    c.querySelector('[data-gal="import"]').addEventListener("click", function () { el("gal-file-" + id).click(); });
+    c.querySelector('[data-gal="slideshow"]').addEventListener("click", function () { galleryToggleSlideshow(id); });
+    c.querySelector('[data-gal="full"]').addEventListener("click", function () { galleryFull(id); });
+    c.querySelector('[data-gal="wallpaper"]').addEventListener("click", function () { gallerySetWallpaper(id); });
+    c.querySelector('[data-gal="download"]').addEventListener("click", function () { const it = gallerySelectedItem(id); if (it) downloadItem(it); });
+    c.querySelector('[data-gal="delete"]').addEventListener("click", function () { galleryDelete(id); });
+    el("gal-file-" + id).addEventListener("change", function (e) { galleryImport(id, e.target.files); });
+
+    galleryRefresh(id);
+  }
+
+  function galleryImages(path) {
+    return getList(path).filter(function (it) { return it.type === "file" && isImageItem(it) && it.content; });
+  }
+
+  function galleryRefresh(id) {
+    const state = runningWindows[id].state;
+    const images = galleryImages(state.path);
+    if (images.length && (!state.selected || !itemByName(state.path, state.selected) || !isImageItem(itemByName(state.path, state.selected)))) {
+      state.selected = images[0].name;
+    }
+    el("gal-path-" + id).textContent = state.path + " | " + images.length + " Bild(er)";
+    const grid = el("gal-grid-" + id);
+    grid.innerHTML = "";
+    if (!images.length) {
+      grid.innerHTML = '<div class="gallery-empty">Keine Bilder in diesem Ordner.</div>';
+      galleryShowSelected(id);
+      return;
+    }
+    images.forEach(function (img) {
+      const tile = document.createElement("div");
+      tile.className = "gallery-thumb" + (state.selected === img.name ? " active" : "");
+      tile.innerHTML = '<img src="' + img.content + '" alt=""><div>' + esc(img.name) + '</div>';
+      tile.addEventListener("click", function () { state.selected = img.name; galleryRefresh(id); });
+      tile.addEventListener("dblclick", function () { state.selected = img.name; galleryFull(id); });
+      grid.appendChild(tile);
+    });
+    galleryShowSelected(id);
+  }
+
+  function gallerySelectedItem(id) {
+    const state = runningWindows[id].state;
+    const it = state.selected ? itemByName(state.path, state.selected) : null;
+    if (!it || !isImageItem(it)) { showToast("Bildgalerie", "Bitte zuerst ein Bild auswählen."); return null; }
+    return it;
+  }
+
+  function galleryShowSelected(id) {
+    const state = runningWindows[id].state;
+    const it = state.selected ? itemByName(state.path, state.selected) : null;
+    const stage = el("gal-stage-" + id);
+    if (!it || !isImageItem(it)) {
+      el("gal-title-" + id).textContent = "Kein Bild ausgewählt";
+      el("gal-meta-" + id).textContent = "";
+      stage.innerHTML = '<div class="gallery-empty">Keine Vorschau verfügbar.</div>';
+      return;
+    }
+    el("gal-title-" + id).textContent = it.name;
+    el("gal-meta-" + id).textContent = (it.mime || "Bild") + " | " + itemSize(it) + " | " + (it.modified || "");
+    stage.innerHTML = '<img src="' + it.content + '" alt="' + esc(it.name) + '">';
+  }
+
+  function galleryImport(id, files) {
+    const state = runningWindows[id].state;
+    const arr = Array.prototype.slice.call(files || []).filter(function (f) { return f.type.indexOf("image/") === 0 || /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(f.name); });
+    if (!arr.length) return showToast("Bildgalerie", "Keine Bilddateien ausgewählt.");
+    let done = 0;
+    arr.forEach(function (f) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        const name = uniqueName(state.path, f.name);
+        getList(state.path).push({ type: "file", name: name, content: reader.result, mime: f.type || "image/*", encoding: "dataurl", created: nowStamp(), modified: nowStamp(), size: f.size });
+        state.selected = name;
+        done++;
+        if (done === arr.length) { saveFS(); showToast("Bildgalerie", done + " Bild(er) importiert."); galleryRefresh(id); }
+      };
+      reader.readAsDataURL(f);
+    });
+  }
+
+  function galleryFull(id) {
+    const it = gallerySelectedItem(id);
+    if (!it) return;
+    el("galleryLightboxImg").src = it.content;
+    el("galleryLightbox").classList.add("active");
+  }
+
+  function gallerySetWallpaper(id) {
+    const it = gallerySelectedItem(id);
+    if (!it) return;
+    localStorage.setItem("venomOS.wallpaperImage", it.content);
+    localStorage.setItem("venomOS.theme", "custom");
+    applySettings();
+    showToast("Bildgalerie", "Bild wurde als Hintergrund festgelegt.");
+  }
+
+  function galleryDelete(id) {
+    const state = runningWindows[id].state;
+    const it = gallerySelectedItem(id);
+    if (!it) return;
+    if (!confirm(it.name + " in den Papierkorb verschieben?")) return;
+    const removed = removeItem(state.path, it.name);
+    if (!removed) return;
+    removed.originalPath = state.path;
+    removed.deleted = nowStamp();
+    removed.name = uniqueName(TRASH_PATH, removed.name);
+    getList(TRASH_PATH).push(removed);
+    state.selected = "";
+    saveFS();
+    galleryRefresh(id);
+    showToast("Bildgalerie", "Bild wurde in den Papierkorb verschoben.");
+  }
+
+  function galleryToggleSlideshow(id) {
+    const state = runningWindows[id].state;
+    if (state.galleryTimer) {
+      clearInterval(state.galleryTimer);
+      state.galleryTimer = null;
+      showToast("Bildgalerie", "Slideshow gestoppt.");
+      return;
+    }
+    const images = galleryImages(state.path);
+    if (images.length < 2) return showToast("Bildgalerie", "Für eine Slideshow brauchst du mindestens 2 Bilder.");
+    showToast("Bildgalerie", "Slideshow gestartet.");
+    state.galleryTimer = setInterval(function () {
+      const list = galleryImages(state.path);
+      if (!list.length) return;
+      let index = list.findIndex(function (x) { return x.name === state.selected; });
+      index = (index + 1) % list.length;
+      state.selected = list[index].name;
+      galleryRefresh(id);
+    }, 2400);
+  }
+
+  function renderNotes(id, data) {
+    data = data || {};
+    let title = "Schnellnotiz";
+    let text = localStorage.getItem("venomOS.quickNote") || "";
+    if (data.path && data.name) {
+      const it = itemByName(data.path, data.name);
+      if (it) { title = data.name; text = it.content || ""; runningWindows[id].data = { path: data.path, name: data.name }; }
+    }
+    runningWindows[id].win.querySelector(".titlebar strong").textContent = "📝 Notizblock - " + title;
+    getCtx(id).innerHTML = '<div class="toolbar"><button class="btn" data-note="save">💾 Speichern</button><button class="btn" data-note="saveas">Speichern unter</button><button class="btn" data-note="download">⬇️ Download</button></div><textarea class="notes-area" id="note-' + id + '" placeholder="Schreibe hier...">' + esc(text) + '</textarea>';
+    getCtx(id).querySelector('[data-note="save"]').addEventListener("click", function () { saveNote(id); });
+    getCtx(id).querySelector('[data-note="saveas"]').addEventListener("click", function () { saveNoteAs(id); });
+    getCtx(id).querySelector('[data-note="download"]').addEventListener("click", function () { downloadItem(file("venomos-notiz.txt", el("note-" + id).value)); });
+  }
+  function saveNote(id) {
+    const data = runningWindows[id].data || {};
+    const text = el("note-" + id).value;
+    if (data.path && data.name) {
+      const it = itemByName(data.path, data.name);
+      if (it) { it.content = text; it.size = text.length; it.modified = nowStamp(); saveFS(); showToast("Notizblock", "Datei gespeichert: " + data.name); return; }
+    }
+    localStorage.setItem("venomOS.quickNote", text);
+    showToast("Notizblock", "Schnellnotiz gespeichert.");
+  }
+  function saveNoteAs(id) {
+    const name = prompt("Dateiname:", "Neue Notiz.txt");
+    if (!name) return;
+    const clean = uniqueName(DOCUMENTS_PATH, name.trim());
+    const text = el("note-" + id).value;
+    getList(DOCUMENTS_PATH).push(file(clean, text));
+    runningWindows[id].data = { path: DOCUMENTS_PATH, name: clean };
+    saveFS();
+    runningWindows[id].win.querySelector(".titlebar strong").textContent = "📝 Notizblock - " + clean;
+    showToast("Notizblock", "Gespeichert in Dokumente: " + clean);
+  }
+
+  function renderPlayer(id, data) {
+    data = data || {};
+    const item = runningWindows[id];
+    const state = item.state;
+    if (!state.playlist) state.playlist = [];
+    if (typeof state.current !== "number") state.current = -1;
+
+    if (data.path && data.name) {
+      const fsItem = itemByName(data.path, data.name);
+      if (fsItem && fsItem.type === "file") {
+        state.playlist.push({
+          name: fsItem.name,
+          src: fsItem.content,
+          mime: fsItem.mime || "audio/mpeg",
+          source: "VenomOS Datei"
+        });
+        state.current = state.playlist.length - 1;
+      }
+    }
+
+    getCtx(id).innerHTML =
+      '<div class="player-shell">' +
+        '<div class="player-cone"><div class="cone-icon">🟧</div></div>' +
+        '<div class="player-main">' +
+          '<div class="track-title" id="ptitle-' + id + '">Keine Musik geladen</div>' +
+          '<div class="track-meta" id="pmeta-' + id + '">Importiere MP3, WAV, OGG oder öffne eine Audiodatei im Explorer.</div>' +
+          '<div class="player-screen">' +
+            '<input class="seek" id="seek-' + id + '" type="range" min="0" max="100" value="0">' +
+            '<div style="display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-top:6px">' +
+              '<span id="ptime-' + id + '">00:00</span><span id="pduration-' + id + '">00:00</span>' +
+            '</div>' +
+            '<div class="player-controls">' +
+              '<button class="btn" id="popen-' + id + '">➕ Musik öffnen</button>' +
+              '<button class="btn" id="pprev-' + id + '">⏮</button>' +
+              '<button class="btn" id="pplay-' + id + '">▶️ Play</button>' +
+              '<button class="btn" id="pstop-' + id + '">⏹ Stop</button>' +
+              '<button class="btn" id="pnext-' + id + '">⏭</button>' +
+              '<button class="btn" id="pmute-' + id + '">🔇</button>' +
+              '<span style="color:var(--muted)">Lautstärke</span>' +
+              '<input class="volume" id="pvol-' + id + '" type="range" min="0" max="1" step="0.01" value="0.8">' +
+            '</div>' +
+          '</div>' +
+          '<div class="playlist" id="plist-' + id + '"></div>' +
+          '<input type="file" id="pfile-' + id + '" accept="audio/*" multiple style="display:none">' +
+          '<audio id="audio-' + id + '"></audio>' +
+        '</div>' +
+      '</div>';
+
+    const audio = el("audio-" + id);
+    audio.volume = 0.8;
+
+    el("popen-" + id).addEventListener("click", function () { el("pfile-" + id).click(); });
+    el("pfile-" + id).addEventListener("change", function (e) { playerImport(id, e.target.files); });
+    el("pplay-" + id).addEventListener("click", function () { playerToggle(id); });
+    el("pstop-" + id).addEventListener("click", function () { playerStop(id); });
+    el("pprev-" + id).addEventListener("click", function () { playerPrev(id); });
+    el("pnext-" + id).addEventListener("click", function () { playerNext(id); });
+    el("pmute-" + id).addEventListener("click", function () {
+      audio.muted = !audio.muted;
+      el("pmute-" + id).textContent = audio.muted ? "🔊" : "🔇";
+    });
+    el("pvol-" + id).addEventListener("input", function () { audio.volume = Number(this.value); });
+    el("seek-" + id).addEventListener("input", function () {
+      if (audio.duration) audio.currentTime = audio.duration * (Number(this.value) / 100);
+    });
+    audio.addEventListener("timeupdate", function () { playerUpdateTime(id); });
+    audio.addEventListener("loadedmetadata", function () { playerUpdateTime(id); });
+    audio.addEventListener("ended", function () { playerNext(id); });
+
+    playerRenderPlaylist(id);
+    if (state.current >= 0) playerLoadTrack(id, state.current, false);
+  }
+
+  function playerImport(id, files) {
+    const state = runningWindows[id].state;
+    const arr = Array.prototype.slice.call(files || []);
+    if (!arr.length) return;
+
+    arr.forEach(function (f) {
+      state.playlist.push({
+        name: f.name,
+        src: URL.createObjectURL(f),
+        mime: f.type || "audio/mpeg",
+        source: "Lokale Datei",
+        objectUrl: true
+      });
+    });
+
+    if (state.current < 0 && state.playlist.length) state.current = 0;
+    playerRenderPlaylist(id);
+    if (state.current >= 0) playerLoadTrack(id, state.current, false);
+    showToast("Venom Player", arr.length + " Track(s) hinzugefügt.");
+  }
+
+  function playerRenderPlaylist(id) {
+    const state = runningWindows[id].state;
+    const list = el("plist-" + id);
+    if (!list) return;
+
+    if (!state.playlist.length) {
+      list.innerHTML = '<div style="padding:12px;color:var(--muted)">Playlist ist leer.</div>';
+      return;
+    }
+
+    list.innerHTML = "";
+    state.playlist.forEach(function (track, index) {
+      const row = document.createElement("div");
+      row.className = "playlist-item" + (index === state.current ? " active" : "");
+      row.innerHTML = "<span>🎵</span><span>" + esc(track.name) + "</span>";
+      row.addEventListener("click", function () { playerLoadTrack(id, index, true); });
+      list.appendChild(row);
+    });
+  }
+
+  function playerLoadTrack(id, index, autoplay) {
+    const state = runningWindows[id].state;
+    const track = state.playlist[index];
+    if (!track) return;
+
+    state.current = index;
+    const audio = el("audio-" + id);
+    audio.src = track.src;
+
+    el("ptitle-" + id).textContent = track.name;
+    el("pmeta-" + id).textContent = track.source + " | " + (track.mime || "Audio");
+    el("pplay-" + id).textContent = "▶️ Play";
+
+    playerRenderPlaylist(id);
+
+    if (autoplay) {
+      audio.play().then(function () {
+        el("pplay-" + id).textContent = "⏸ Pause";
+      }).catch(function () {
+        showToast("Venom Player", "Wiedergabe wurde vom Browser blockiert. Drücke Play.");
+      });
+    }
+  }
+
+  function playerToggle(id) {
+    const state = runningWindows[id].state;
+    if (!state.playlist.length) {
+      showToast("Venom Player", "Bitte erst Musik öffnen.");
+      return;
+    }
+
+    if (state.current < 0) playerLoadTrack(id, 0, false);
+
+    const audio = el("audio-" + id);
+    if (audio.paused) {
+      audio.play().then(function () {
+        el("pplay-" + id).textContent = "⏸ Pause";
+      }).catch(function () {
+        showToast("Venom Player", "Wiedergabe konnte nicht gestartet werden.");
+      });
+    } else {
+      audio.pause();
+      el("pplay-" + id).textContent = "▶️ Play";
+    }
+  }
+
+  function playerStop(id) {
+    const audio = el("audio-" + id);
+    audio.pause();
+    audio.currentTime = 0;
+    el("pplay-" + id).textContent = "▶️ Play";
+    playerUpdateTime(id);
+  }
+
+  function playerPrev(id) {
+    const state = runningWindows[id].state;
+    if (!state.playlist.length) return;
+    const next = (state.current - 1 + state.playlist.length) % state.playlist.length;
+    playerLoadTrack(id, next, true);
+  }
+
+  function playerNext(id) {
+    const state = runningWindows[id].state;
+    if (!state.playlist.length) return;
+    const next = (state.current + 1) % state.playlist.length;
+    playerLoadTrack(id, next, true);
+  }
+
+  function fmtTime(sec) {
+    if (!isFinite(sec)) return "00:00";
+    sec = Math.max(0, Math.floor(sec));
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+  }
+
+  function playerUpdateTime(id) {
+    const audio = el("audio-" + id);
+    if (!audio) return;
+    el("ptime-" + id).textContent = fmtTime(audio.currentTime || 0);
+    el("pduration-" + id).textContent = fmtTime(audio.duration || 0);
+    el("seek-" + id).value = audio.duration ? String((audio.currentTime / audio.duration) * 100) : "0";
+  }
+
+  function renderTerminal(id, data) {
+    const state = runningWindows[id].state;
+    state.cwd = (data && data.path) || DESKTOP_PATH;
+    state.lines = state.lines || ["VenomOS Terminal v1.1", "Gib help ein."];
+    getCtx(id).innerHTML = '<div class="term" id="term-' + id + '"></div>';
+    terminalPrompt(id);
+  }
+  function terminalPrompt(id) {
+    const state = runningWindows[id].state;
+    const t = el("term-" + id);
+    t.innerHTML = state.lines.map(function (line) { return "<div>" + esc(line) + "</div>"; }).join("") + '<div>' + esc(state.cwd) + '&gt; <input id="terminal-input-' + id + '"></div>';
+    const input = el("terminal-input-" + id);
+    input.addEventListener("keydown", function (e) { terminalKey(e, id); });
+    input.focus();
+    t.scrollTop = t.scrollHeight;
+  }
+  function parseArgs(str) {
+    const out = [];
+    let cur = "";
+    let quote = false;
+    for (let i = 0; i < str.length; i++) {
+      const ch = str[i];
+      if (ch === '"') { quote = !quote; continue; }
+      if (ch === " " && !quote) { if (cur) { out.push(cur); cur = ""; } }
+      else cur += ch;
+    }
+    if (cur) out.push(cur);
+    return out;
+  }
+  function resolvePath(cwd, target) {
+    if (!target || target === ".") return normalizePath(cwd);
+    if (target === "..") return parentPath(cwd);
+    if (target.indexOf("C:") === 0) return normalizePath(target);
+    return joinPath(cwd, target);
+  }
+  function terminalKey(e, id) {
+    if (e.key !== "Enter") return;
+    const state = runningWindows[id].state;
+    const value = e.target.value.trim();
+    state.lines.push(state.cwd + "> " + value);
+    runCommand(id, value);
+    terminalPrompt(id);
+  }
+  function runCommand(id, value) {
+    const state = runningWindows[id].state;
+    const parts = parseArgs(value);
+    const cmd = (parts.shift() || "").toLowerCase();
+    const line = function (msg) { state.lines.push(String(msg)); };
+    if (!cmd) return;
+    if (cmd === "help") line("Befehle: help, cls, pwd, dir, cd, mkdir, touch, write, cat, rename, del, tree, open, restart, date, time, whoami");
+    else if (cmd === "cls" || cmd === "clear") state.lines = [];
+    else if (cmd === "pwd") line(state.cwd);
+    else if (cmd === "dir" || cmd === "ls") getList(state.cwd).forEach(function (i) { line((i.type === "folder" ? "[DIR] " : "      ") + i.name); });
+    else if (cmd === "cd") { const p = resolvePath(state.cwd, parts.join(" ")); if (fs[p]) state.cwd = p; else line("Pfad nicht gefunden."); }
+    else if (cmd === "mkdir") { const name = parts.join(" "); if (!name) line("Name fehlt."); else { const n = uniqueName(state.cwd, name); getList(state.cwd).push(folder(n)); fs[joinPath(state.cwd, n)] = []; saveFS(); line("Ordner erstellt: " + n); } }
+    else if (cmd === "touch") { const name = parts.join(" "); if (!name) line("Dateiname fehlt."); else { const n = uniqueName(state.cwd, name); getList(state.cwd).push(file(n, "")); saveFS(); line("Datei erstellt: " + n); } }
+    else if (cmd === "write") { const name = parts.shift(); const text = parts.join(" "); const it = itemByName(state.cwd, name); if (!name) line("Dateiname fehlt."); else if (it && it.type === "folder") line("Das ist ein Ordner."); else { const target = it || file(name, ""); if (!it) getList(state.cwd).push(target); target.content = text; target.size = text.length; target.modified = nowStamp(); saveFS(); line("Geschrieben: " + name); } }
+    else if (cmd === "cat") { const it = itemByName(state.cwd, parts.join(" ")); if (!it || it.type !== "file") line("Datei nicht gefunden."); else line(it.encoding === "text" ? (it.content || "") : "Diese Datei ist keine Textdatei."); }
+    else if (cmd === "rename") { const oldName = parts.shift(); const newName = parts.join(" "); const it = itemByName(state.cwd, oldName); if (!it || !newName) line("Nutzung: rename alterName neuerName"); else { const clean = uniqueName(state.cwd, newName); if (it.type === "folder") renameFolderPath(joinPath(state.cwd, it.name), joinPath(state.cwd, clean)); it.name = clean; it.modified = nowStamp(); saveFS(); line("Umbenannt."); } }
+    else if (cmd === "del" || cmd === "rm") { const name = parts.join(" "); const it = removeItem(state.cwd, name); if (!it) line("Element nicht gefunden."); else { it.originalPath = state.cwd; it.deleted = nowStamp(); it.name = uniqueName(TRASH_PATH, it.name); getList(TRASH_PATH).push(it); saveFS(); line("In Papierkorb verschoben: " + name); } }
+    else if (cmd === "tree") printTree(state.cwd, line, 0, 3);
+    else if (cmd === "open") { const app = parts[0] || "files"; if (apps[app]) openApp(app, app === "files" ? { path: state.cwd } : {}); else line("App nicht gefunden."); }
+    else if (cmd === "restart") restartOS();
+    else if (cmd === "date") line(new Date().toLocaleDateString("de-DE"));
+    else if (cmd === "time") line(new Date().toLocaleTimeString("de-DE"));
+    else if (cmd === "whoami") line(localStorage.getItem("venomOS.username") || "VenomSnake");
+    else line("Unbekannter Befehl: " + cmd);
+  }
+  function printTree(path, line, depth, maxDepth) {
+    if (depth > maxDepth) return;
+    getList(path).forEach(function (i) {
+      line("  ".repeat(depth) + (i.type === "folder" ? "📁 " : "📄 ") + i.name);
+      if (i.type === "folder") printTree(joinPath(path, i.name), line, depth + 1, maxDepth);
+    });
+  }
+
+  function renderTwitch(id, data) {
+    data = data || {};
+    const savedChannel = localStorage.getItem("venomOS.twitchChannel") || "venomsnaketwitch";
+    const channel = cleanTwitchChannel(data.channel || savedChannel);
+    const c = getCtx(id);
+    c.innerHTML = '<div class="twitch-shell">' +
+      '<div class="twitch-top">' +
+        '<div class="twitch-logo">T</div>' +
+        '<input class="input twitch-channel" id="twitch-channel-' + id + '" value="' + esc(channel) + '" placeholder="Twitch-Kanalname">' +
+        '<button class="btn" id="twitch-load-' + id + '">Kanal laden</button>' +
+        '<button class="btn" id="twitch-login-' + id + '">Twitch Login</button>' +
+        '<button class="btn" id="twitch-popout-' + id + '">Chat Popout</button>' +
+        '<button class="btn" id="twitch-open-' + id + '">Auf Twitch öffnen</button>' +
+        '<div class="twitch-help" id="twitch-help-' + id + '"></div>' +
+      '</div>' +
+      '<div class="twitch-layout">' +
+        '<div class="twitch-card"><div class="twitch-card-title"><span>Live-Stream</span><span id="twitch-video-status-' + id + '"></span></div><iframe class="twitch-frame" id="twitch-video-' + id + '" allowfullscreen allow="autoplay; fullscreen"></iframe></div>' +
+        '<div class="twitch-card"><div class="twitch-card-title"><span>Chat</span><span>Login läuft über Twitch</span></div><iframe class="twitch-frame" id="twitch-chat-' + id + '"></iframe></div>' +
+      '</div>' +
+    '</div>';
+
+    el("twitch-load-" + id).addEventListener("click", function () { twitchLoadChannel(id); });
+    el("twitch-channel-" + id).addEventListener("keydown", function (e) { if (e.key === "Enter") twitchLoadChannel(id); });
+    el("twitch-login-" + id).addEventListener("click", function () { window.open("https://www.twitch.tv/login", "_blank", "noopener"); });
+    el("twitch-popout-" + id).addEventListener("click", function () {
+      const ch = cleanTwitchChannel(el("twitch-channel-" + id).value);
+      window.open("https://www.twitch.tv/popout/" + encodeURIComponent(ch) + "/chat?popout=", "_blank", "noopener");
+    });
+    el("twitch-open-" + id).addEventListener("click", function () {
+      const ch = cleanTwitchChannel(el("twitch-channel-" + id).value);
+      window.open("https://www.twitch.tv/" + encodeURIComponent(ch), "_blank", "noopener");
+    });
+    twitchLoadChannel(id);
+  }
+  function cleanTwitchChannel(value) {
+    return String(value || "venomsnaketwitch").trim().replace(/^@/, "").replace(/^https?:\/\/www\.twitch\.tv\//i, "").split(/[/?#]/)[0].toLowerCase() || "venomsnaketwitch";
+  }
+  function twitchParent() {
+    return window.location.hostname || "localhost";
+  }
+  function twitchLoadChannel(id) {
+    const input = el("twitch-channel-" + id);
+    const channel = cleanTwitchChannel(input.value);
+    input.value = channel;
+    localStorage.setItem("venomOS.twitchChannel", channel);
+    const parent = twitchParent();
+    const video = el("twitch-video-" + id);
+    const chat = el("twitch-chat-" + id);
+    video.src = "https://player.twitch.tv/?channel=" + encodeURIComponent(channel) + "&parent=" + encodeURIComponent(parent) + "&muted=false";
+    chat.src = "https://www.twitch.tv/embed/" + encodeURIComponent(channel) + "/chat?parent=" + encodeURIComponent(parent) + "&darkpopout";
+    const localHint = window.location.protocol === "file:" ? "Du öffnest VenomOS lokal per Datei. Twitch kann eingebetteten Chat wegen der parent-Domain blockieren. Nutze dann den Button \"Chat Popout\" oder hoste die HTML z. B. lokal per localhost/GitHub Pages." : "Aktueller Embed-Parent: " + parent;
+    el("twitch-help-" + id).textContent = "Zum Schreiben im Chat musst du bei Twitch eingeloggt sein. " + localHint;
+    el("twitch-video-status-" + id).textContent = channel;
+    showToast("Twitch", "Kanal geladen: " + channel);
+  }
+
+  function renderBrowser(id, data) {
+    data = data || {};
+    const url = data.url || "https://www.bing.com";
+    getCtx(id).innerHTML = '<div class="browser-nav"><input class="url-bar" id="url-' + id + '" value="' + esc(url) + '"><button class="btn" id="go-' + id + '">Go</button></div><iframe id="frame-' + id + '" src="' + esc(url) + '" style="width:100%;height:calc(100% - 45px);min-height:280px;border:none;background:white;border-radius:8px"></iframe>';
+    el("go-" + id).addEventListener("click", function () { browserGo(id); });
+    el("url-" + id).addEventListener("keydown", function (e) { if (e.key === "Enter") browserGo(id); });
+  }
+  function browserGo(id) {
+    const input = el("url-" + id);
+    let url = input.value.trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) url = "https://www.bing.com/search?q=" + encodeURIComponent(url);
+    input.value = url;
+    el("frame-" + id).src = url;
+  }
+
+  function renderCalc(id) {
+    getCtx(id).innerHTML = '<div class="calc-grid" id="calc-' + id + '"></div>';
+    drawCalc(id);
+  }
+  function drawCalc(id) {
+    const keys = ["C", "⌫", "%", "/", "7", "8", "9", "*", "4", "5", "6", "-", "1", "2", "3", "+", "0", ".", "±", "="];
+    const box = el("calc-" + id);
+    box.innerHTML = '<div class="calc-display" id="calcdisp-' + id + '">' + esc(calcValue) + '</div>';
+    keys.forEach(function (k) {
+      const b = document.createElement("button");
+      b.textContent = k;
+      if (k === "=") b.className = "eq";
+      b.addEventListener("click", function () { calcPress(id, k); });
+      box.appendChild(b);
+    });
+  }
+  function calcPress(id, key) {
+    if (key === "C") calcValue = "0";
+    else if (key === "⌫") calcValue = calcValue.length > 1 ? calcValue.slice(0, -1) : "0";
+    else if (key === "±") calcValue = calcValue.startsWith("-") ? calcValue.slice(1) : "-" + calcValue;
+    else if (key === "=") { try { calcValue = String(Function("return (" + calcValue.replace(/%/g, "/100") + ")")()); calcDone = true; } catch (e) { calcValue = "Fehler"; } }
+    else { if (calcValue === "0" || calcValue === "Fehler" || calcDone) { calcValue = ""; calcDone = false; } calcValue += key; }
+    el("calcdisp-" + id).textContent = calcValue;
+  }
+
+  function renderSettings(id) {
+    getCtx(id).innerHTML =
+      '<h3 style="margin-bottom:12px">Einstellungen</h3>' +
+      '<div class="settings-grid">' +
+        '<div class="panel"><label>Profil</label><input class="input" id="username-' + id + '" value="' + esc((getCurrentProfile() && getCurrentProfile().name) || localStorage.getItem("venomOS.username") || "VenomSnake") + '"><p class="setting-help">Ändert den Namen des aktuell angemeldeten Profils.</p><label style="margin-top:10px">Neues Passwort</label><input class="input" type="password" id="profile-pass-' + id + '" placeholder="Leer lassen = unverändert"><label style="margin-top:10px">Passwort wiederholen</label><input class="input" type="password" id="profile-pass2-' + id + '" placeholder="Wiederholen"></div>' +
+        '<div class="panel"><label>Akzentfarbe</label><input class="input" type="color" id="accent-' + id + '" value="' + esc(getAccent()) + '" style="height:42px"><p class="setting-help">Ändert Buttons, Markierungen und Player-Akzente.</p></div>' +
+        '<div class="panel"><label>Hintergrund / Wallpaper</label><select class="input" id="theme-' + id + '"><option value="venom">Venom Grün</option><option value="blue">Blau</option><option value="dark">Dunkel</option><option value="custom">Eigenes Bild</option></select><div class="wallpaper-preview" id="wallpaper-preview-' + id + '"></div><div class="toolbar" style="margin-top:10px;margin-bottom:0"><button class="btn" id="choose-wallpaper-' + id + '">Bild wählen</button><button class="btn danger" id="clear-wallpaper-' + id + '">Bild entfernen</button><input type="file" accept="image/*" id="wallpaper-file-' + id + '" style="display:none"></div><p class="setting-help">Eigene Bilder werden lokal im Browser gespeichert. Am besten unter 3 MB.</p></div>' +
+        '<div class="panel"><label>System</label><button class="btn" id="backup-' + id + '">Backup exportieren</button> <button class="btn danger" id="reset-' + id + '">Dateisystem zurücksetzen</button><p class="setting-help">Backup enthält dein virtuelles Dateisystem.</p></div>' +
+      '</div>' +
+      '<br><button class="btn" id="save-settings-' + id + '">Speichern</button> <button class="btn" id="restart-settings-' + id + '">Neustart testen</button>';
+
+    el("theme-" + id).value = localStorage.getItem("venomOS.theme") || "venom";
+    updateWallpaperPreview(id);
+    el("theme-" + id).addEventListener("change", function () { updateWallpaperPreview(id); });
+    el("choose-wallpaper-" + id).addEventListener("click", function () { el("wallpaper-file-" + id).click(); });
+    el("wallpaper-file-" + id).addEventListener("change", function (e) { importWallpaper(id, e.target.files && e.target.files[0]); });
+    el("clear-wallpaper-" + id).addEventListener("click", function () { clearWallpaper(id); });
+    el("save-settings-" + id).addEventListener("click", function () { saveSettings(id); });
+    el("restart-settings-" + id).addEventListener("click", restartOS);
+    el("backup-" + id).addEventListener("click", exportBackup);
+    el("reset-" + id).addEventListener("click", resetFileSystem);
+  }
+  function getAccent() { return localStorage.getItem("venomOS.accent") || "#00ff9d"; }
+  function hexToRgba(hex, alpha) {
+    const clean = String(hex).replace("#", "");
+    const r = parseInt(clean.substring(0, 2), 16);
+    const g = parseInt(clean.substring(2, 4), 16);
+    const b = parseInt(clean.substring(4, 6), 16);
+    return "rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")";
+  }
+  function applySettings() {
+    const color = getAccent();
+    document.documentElement.style.setProperty("--accent", color);
+    document.documentElement.style.setProperty("--accent-dim", hexToRgba(color, .2));
+    document.body.classList.remove("theme-blue", "theme-dark");
+    document.body.style.backgroundImage = "";
+    document.body.style.backgroundSize = "";
+    document.body.style.backgroundPosition = "";
+    document.body.style.backgroundRepeat = "";
+
+    const theme = localStorage.getItem("venomOS.theme") || "venom";
+    const customWallpaper = localStorage.getItem("venomOS.wallpaperImage") || "";
+    if (theme === "custom" && customWallpaper) {
+      document.body.style.backgroundImage = "linear-gradient(rgba(0,0,0,.18), rgba(0,0,0,.32)), url('" + customWallpaper + "')";
+      document.body.style.backgroundSize = "cover";
+      document.body.style.backgroundPosition = "center center";
+      document.body.style.backgroundRepeat = "no-repeat";
+    } else {
+      if (theme === "blue") document.body.classList.add("theme-blue");
+      if (theme === "dark") document.body.classList.add("theme-dark");
+    }
+  }
+  function saveSettings(id) {
+    const profile = getCurrentProfile();
+    const newName = el("username-" + id).value || "VenomSnake";
+    profile.name = newName;
+    profile.avatar = newName.charAt(0).toUpperCase() || "V";
+    const pass1 = el("profile-pass-" + id).value;
+    const pass2 = el("profile-pass2-" + id).value;
+    if (pass1 || pass2) {
+      if (pass1 !== pass2) { showToast("Profil", "Passwörter stimmen nicht überein."); return; }
+      profile.password = pass1;
+    }
+    saveProfiles();
+    localStorage.setItem("venomOS.username", profile.name);
+    localStorage.setItem("venomOS.accent", el("accent-" + id).value);
+    localStorage.setItem("venomOS.theme", el("theme-" + id).value);
+    applySettings();
+    updateWallpaperPreview(id);
+    showToast("Einstellungen", "Profil, Hintergrund und Einstellungen gespeichert.");
+  }
+  function updateWallpaperPreview(id) {
+    const preview = el("wallpaper-preview-" + id);
+    const select = el("theme-" + id);
+    if (!preview || !select) return;
+    const theme = select.value;
+    const custom = localStorage.getItem("venomOS.wallpaperImage") || "";
+    preview.style.backgroundImage = "";
+    preview.style.backgroundSize = "cover";
+    preview.style.backgroundPosition = "center";
+    if (theme === "blue") preview.style.backgroundImage = "radial-gradient(circle at 20% 20%, rgba(54,181,255,.35), transparent 30%), radial-gradient(circle at center, #0b1d2e 0%, #050709 100%)";
+    else if (theme === "dark") preview.style.backgroundImage = "radial-gradient(circle at center, #10201b 0%, #020303 100%)";
+    else if (theme === "custom" && custom) preview.style.backgroundImage = "linear-gradient(rgba(0,0,0,.08), rgba(0,0,0,.22)), url('" + custom + "')";
+    else preview.style.backgroundImage = "radial-gradient(circle at 18% 20%, rgba(0,255,157,.25), transparent 28%), radial-gradient(circle at 82% 28%, rgba(54,181,255,.17), transparent 30%), radial-gradient(circle at center, #0b2e24 0%, #050a09 100%)";
+  }
+  function importWallpaper(id, fileObj) {
+    if (!fileObj) return;
+    if (!fileObj.type || fileObj.type.indexOf("image/") !== 0) {
+      showToast("Einstellungen", "Bitte eine Bilddatei auswählen.");
+      return;
+    }
+    if (fileObj.size > 3.8 * 1024 * 1024) {
+      showToast("Einstellungen", "Das Bild ist recht groß. Nimm besser ein Bild unter 3 MB.");
+    }
+    const reader = new FileReader();
+    reader.onload = function () {
+      try {
+        localStorage.setItem("venomOS.wallpaperImage", reader.result);
+        el("theme-" + id).value = "custom";
+        localStorage.setItem("venomOS.theme", "custom");
+        applySettings();
+        updateWallpaperPreview(id);
+        showToast("Einstellungen", "Eigenes Hintergrundbild wurde gesetzt.");
+      } catch (e) {
+        showToast("Einstellungen", "Bild konnte nicht gespeichert werden. Es ist wahrscheinlich zu groß.");
+      }
+    };
+    reader.readAsDataURL(fileObj);
+  }
+  function clearWallpaper(id) {
+    localStorage.removeItem("venomOS.wallpaperImage");
+    if (el("theme-" + id).value === "custom") el("theme-" + id).value = "venom";
+    localStorage.setItem("venomOS.theme", el("theme-" + id).value);
+    applySettings();
+    updateWallpaperPreview(id);
+    showToast("Einstellungen", "Eigenes Hintergrundbild wurde entfernt.");
+  }
+  function resetFileSystem() {
+    if (!confirm("Virtuelles Dateisystem wirklich zurücksetzen?")) return;
+    fs = makeDefaultFS();
+    saveFS();
+    showToast("VenomOS", "Dateisystem wurde zurückgesetzt.");
+  }
+  function exportBackup() { downloadItem(file("venomos-backup.json", JSON.stringify(fs, null, 2), "application/json")); }
+
+  function renderTaskManager(id) {
+    const rows = Object.keys(runningWindows).map(function (wid) {
+      const w = runningWindows[wid];
+      return "<tr><td>" + apps[w.key].icon + " " + apps[w.key].name + "</td><td>" + (w.minimized ? "Minimiert" : "Aktiv") + "</td><td><button class='btn' data-focus='" + wid + "'>Öffnen</button> <button class='btn' data-min='" + wid + "'>Minimieren</button> <button class='btn danger' data-close='" + wid + "'>Beenden</button></td></tr>";
+    }).join("");
+    getCtx(id).innerHTML = '<div class="toolbar"><button class="btn" id="tm-refresh-' + id + '">Aktualisieren</button></div><table class="file-table"><thead><tr><th>App</th><th>Status</th><th>Aktion</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    el("tm-refresh-" + id).addEventListener("click", function () { renderTaskManager(id); });
+    getCtx(id).querySelectorAll("[data-focus]").forEach(function (b) { b.addEventListener("click", function () { focusWindow(this.getAttribute("data-focus")); }); });
+    getCtx(id).querySelectorAll("[data-min]").forEach(function (b) { b.addEventListener("click", function () { minimizeWindow(this.getAttribute("data-min")); }); });
+    getCtx(id).querySelectorAll("[data-close]").forEach(function (b) { b.addEventListener("click", function () { closeWindow(this.getAttribute("data-close")); renderTaskManager(id); }); });
+  }
+
+  function renderRun(id) {
+    getCtx(id).innerHTML = '<h3>Ausführen</h3><p style="color:var(--muted); margin:8px 0 12px;">Befehle: explorer, cmd, player, notepad, calc, settings, taskmgr, restart</p><input class="input" id="run-input-' + id + '" placeholder="Befehl eingeben"><br><br><button class="btn" id="run-button-' + id + '">Ausführen</button>';
+    el("run-button-" + id).addEventListener("click", function () { executeRun(id); });
+    el("run-input-" + id).addEventListener("keydown", function (e) { if (e.key === "Enter") executeRun(id); });
+    el("run-input-" + id).focus();
+  }
+  function openRunDialog() { closeStart(); openApp("run"); }
+  function executeRun(id) {
+    const val = el("run-input-" + id).value.trim().toLowerCase();
+    if (!val) return;
+    if (val === "explorer" || val === "files") openApp("files", { path: DESKTOP_PATH });
+    else if (val === "gallery" || val === "galerie" || val === "bilder") openApp("gallery");
+    else if (val === "player" || val === "vlc" || val === "musik") openApp("player");
+    else if (val === "cmd" || val === "terminal" || val === "term") openApp("term");
+    else if (val === "player" || val === "vlc" || val === "musik") openApp("player");
+    else if (val === "notepad" || val === "notes") openApp("notes");
+    else if (val === "calc" || val === "rechner") openApp("calc");
+    else if (val === "settings" || val === "einstellungen") openApp("settings");
+    else if (val === "taskmgr" || val === "taskmanager") openApp("taskmanager");
+    else if (val === "twitch" || val === "chat") openApp("twitch");
+    else if (val === "restart") restartOS();
+    else showToast("Ausführen", "Befehl nicht gefunden: " + val);
+  }
+
+  function renderViewer(id, data) {
+    const it = data && data.path && data.name ? itemByName(data.path, data.name) : null;
+    if (!it) { getCtx(id).innerHTML = "Datei nicht gefunden."; return; }
+    runningWindows[id].win.querySelector(".titlebar strong").textContent = "👁️ Datei-Viewer - " + it.name;
+    if ((it.mime || "").indexOf("image/") === 0 && it.encoding === "dataurl") {
+      getCtx(id).innerHTML = '<img src="' + it.content + '" style="max-width:100%;border-radius:10px;display:block;margin:auto;">';
+    } else {
+      getCtx(id).innerHTML = '<h3>' + esc(it.name) + '</h3><p style="color:var(--muted); margin:10px 0 14px;">Diese Datei kann nicht direkt angezeigt werden.</p><button class="btn" id="viewer-download-' + id + '">Download</button>';
+      el("viewer-download-" + id).addEventListener("click", function () { downloadItem(it); });
+    }
+  }
+  function renderAbout(id) {
+    getCtx(id).innerHTML = '<h2 style="color:var(--accent); margin-bottom:10px;">VenomOS Ultra Edition</h2><p style="color:var(--muted); line-height:1.5;">HTML-Desktop-Simulation mit funktionierendem Explorer, virtuellem Dateisystem, lokalen Dateien, Import, Download, Kopieren, Ausschneiden, Einfügen, Papierkorb, Terminal, Task-Manager, Einstellungen, Rechner, Browser, Venom Player, Bildgalerie, Profil-Login, OS-Startanimation, eigene Hintergrundbilder, Ausführen-Dialog und Neustart-Sequenz.</p>';
+  }
+
+  function restartOS() {
+    closeStart();
+    const screen = el("restartScreen");
+    const status = el("restartStatus");
+    const progress = el("restartProgress");
+    screen.classList.add("active");
+    progress.style.width = "0%";
+    const steps = [
+      { text: "Apps werden geschlossen...", pct: 20, delay: 500, action: closeAllWindows },
+      { text: "Dateisystem wird gespeichert...", pct: 42, delay: 650, action: saveFS },
+      { text: "VenomOS Kernel wird neu geladen...", pct: 66, delay: 750 },
+      { text: "Desktop wird vorbereitet...", pct: 88, delay: 650, action: function () { renderDesktop(); renderStartMenu(); applySettings(); } },
+      { text: "Neustart abgeschlossen.", pct: 100, delay: 600 }
+    ];
+    let i = 0;
+    function next() {
+      const step = steps[i];
+      status.textContent = step.text;
+      progress.style.width = step.pct + "%";
+      if (step.action) step.action();
+      i++;
+      if (i < steps.length) setTimeout(next, step.delay);
+      else setTimeout(function () { screen.classList.remove("active"); startBootAnimation("Neustart abgeschlossen. Bitte Profil anmelden."); }, step.delay);
+    }
+    setTimeout(next, 200);
+  }
+  function closeAllWindows() {
+    Object.keys(runningWindows).forEach(function (id) { runningWindows[id].win.remove(); });
+    runningWindows = {};
+    activeWindow = null;
+    renderTaskbar();
+  }
+  function lockOS() { closeStart(); closeAllWindows(); showLogin("VenomOS wurde gesperrt. Melde dich erneut an."); }
+  function unlockOS() { el("lockScreen").classList.remove("active"); showLogin("VenomOS wurde gesperrt. Melde dich erneut an."); }
+  function updateClock() {
+    const now = new Date();
+    el("clock").innerHTML = now.toLocaleTimeString("de-DE") + "<br>" + now.toLocaleDateString("de-DE");
+    el("lockTime").textContent = now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+    el("lockDate").textContent = now.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+  }
+  function showToast(title, message) {
+    const zone = el("toastZone");
+    const t = document.createElement("div");
+    t.className = "toast";
+    t.innerHTML = "<strong>" + esc(title) + "</strong><br><span>" + esc(message) + "</span>";
+    zone.appendChild(t);
+    setTimeout(function () { t.remove(); }, 4200);
+  }
+
+  try { init(); }
+  catch (err) {
+    console.error(err);
+    document.body.innerHTML = '<div style="padding:30px;color:white;background:#111;font-family:monospace"><h1>VenomOS Fehler</h1><pre>' + esc(err.stack || err.message || err) + '</pre></div>';
+  }
+})();
+</script>
+</body>
+</html>
