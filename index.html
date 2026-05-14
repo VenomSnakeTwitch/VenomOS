@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VenomOS - Ultra Edition</title>
-
   <link rel="icon" type="image/x-icon" href="./favicon.ico">
-  
   <style>
     :root {
       --accent: #00ff9d;
@@ -653,6 +651,93 @@
       .twitch-layout { grid-template-columns: 1fr; grid-template-rows: minmax(280px, 1fr) minmax(330px, 1fr); }
     }
 
+    .social-shell {
+      height: 100%;
+      min-height: 420px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 12px;
+    }
+    .social-top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255,255,255,.06);
+    }
+    .social-logo {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      color: white;
+      font-weight: 900;
+      box-shadow: 0 14px 30px rgba(0,0,0,.25);
+      flex: 0 0 auto;
+    }
+    .social-logo.youtube { background: #ff0033; }
+    .social-logo.tiktok { background: linear-gradient(135deg, #00f2ea, #ff0050); }
+    .social-info { flex: 1; min-width: 210px; }
+    .social-info h3 { margin-bottom: 3px; }
+    .social-help { color: var(--muted); font-size: 12px; line-height: 1.4; flex-basis: 100%; margin-left: 50px; }
+    .social-body {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(300px, .9fr) minmax(360px, 1.2fr);
+      gap: 12px;
+    }
+    .social-card {
+      min-height: 0;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(0,0,0,.22);
+      padding: 12px;
+      overflow: auto;
+    }
+    .video-preview {
+      width: 100%;
+      max-height: 270px;
+      border-radius: 12px;
+      background: rgba(0,0,0,.45);
+      border: 1px solid rgba(255,255,255,.08);
+      display: block;
+    }
+    .video-placeholder {
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+      border-radius: 12px;
+      border: 1px dashed rgba(255,255,255,.18);
+      background: rgba(0,0,0,.20);
+      padding: 18px;
+    }
+    .social-form label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin: 10px 0 5px;
+    }
+    .social-form textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    .social-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    @media (max-width: 900px) {
+      .social-body { grid-template-columns: 1fr; grid-template-rows: auto auto; }
+      .social-help { margin-left: 0; }
+    }
+
     .overlay {
       position: fixed;
       inset: 0;
@@ -839,6 +924,8 @@
     player: { name: "Venom Player", icon: "🟧", desktop: true, w: 720, h: 500 },
     gallery: { name: "Bildgalerie", icon: "🖼️", desktop: true, w: 860, h: 570 },
     twitch: { name: "Twitch", icon: "💜", desktop: true, w: 980, h: 620 },
+    youtube: { name: "YouTube", icon: "▶️", desktop: true, w: 920, h: 610 },
+    tiktok: { name: "TikTok", icon: "🎵", desktop: true, w: 920, h: 610 },
     notes: { name: "Notizblock", icon: "📝", desktop: true, w: 730, h: 500 },
     term: { name: "Terminal", icon: "⌨️", desktop: true, w: 760, h: 460 },
     browser: { name: "Internet Browser", icon: "🌐", desktop: true, w: 720, h: 460 },
@@ -1278,6 +1365,8 @@
     else if (key === "player") renderPlayer(id, data);
     else if (key === "gallery") renderGallery(id, data);
     else if (key === "twitch") renderTwitch(id, data);
+    else if (key === "youtube") renderSocialUploader(id, "youtube", data);
+    else if (key === "tiktok") renderSocialUploader(id, "tiktok", data);
     else if (key === "notes") renderNotes(id, data);
     else if (key === "term") renderTerminal(id, data);
     else if (key === "browser") renderBrowser(id, data);
@@ -1965,6 +2054,116 @@
     });
   }
 
+  function renderSocialUploader(id, platform, data) {
+    data = data || {};
+    const isYoutube = platform === "youtube";
+    const cfg = isYoutube ? {
+      name: "YouTube",
+      icon: "▶️",
+      logoClass: "youtube",
+      uploadUrl: "https://www.youtube.com/upload",
+      studioUrl: "https://studio.youtube.com",
+      titleKey: "venomOS.youtubeTitle",
+      textKey: "venomOS.youtubeDescription",
+      titleLabel: "Titel",
+      textLabel: "Beschreibung",
+      titlePlaceholder: "Videotitel für YouTube",
+      textPlaceholder: "Beschreibung, Links, Tags...",
+      help: "Wähle dein Video in VenomOS aus, kopiere Titel/Beschreibung und öffne dann YouTube Studio. Die Datei musst du aus Sicherheitsgründen im YouTube-Uploadfenster selbst auswählen."
+    } : {
+      name: "TikTok",
+      icon: "🎵",
+      logoClass: "tiktok",
+      uploadUrl: "https://www.tiktok.com/upload",
+      studioUrl: "https://www.tiktok.com/@" + encodeURIComponent(localStorage.getItem("venomOS.tiktokHandle") || ""),
+      titleKey: "venomOS.tiktokTitle",
+      textKey: "venomOS.tiktokCaption",
+      titleLabel: "Interner Titel",
+      textLabel: "Caption",
+      titlePlaceholder: "Name für dein Video in VenomOS",
+      textPlaceholder: "Caption mit Hashtags...",
+      help: "Wähle dein Video in VenomOS aus, kopiere die Caption und öffne dann TikTok Upload. Die Datei musst du im TikTok-Fenster selbst auswählen."
+    };
+
+    const state = runningWindows[id].state;
+    state.socialPlatform = platform;
+
+    getCtx(id).innerHTML =
+      '<div class="social-shell">' +
+        '<div class="social-top">' +
+          '<div class="social-logo ' + cfg.logoClass + '">' + cfg.icon + '</div>' +
+          '<div class="social-info"><h3>' + cfg.name + ' Upload</h3><div style="color:var(--muted);font-size:13px">Video vorbereiten und Upload-Seite öffnen</div></div>' +
+          '<button class="btn" id="social-pick-' + id + '">🎬 Video wählen</button>' +
+          '<button class="btn" id="social-open-' + id + '">⬆️ Upload öffnen</button>' +
+          '<button class="btn" id="social-home-' + id + '">🌐 Plattform öffnen</button>' +
+          '<input type="file" accept="video/*" id="social-file-' + id + '" style="display:none">' +
+          '<div class="social-help">' + cfg.help + '</div>' +
+        '</div>' +
+        '<div class="social-body">' +
+          '<div class="social-card" id="social-preview-' + id + '"><div class="video-placeholder">Noch kein Video ausgewählt.<br><br>Klicke auf „Video wählen“.</div></div>' +
+          '<div class="social-card social-form">' +
+            '<label>' + cfg.titleLabel + '</label>' +
+            '<input class="input" id="social-title-' + id + '" value="' + esc(localStorage.getItem(cfg.titleKey) || '') + '" placeholder="' + cfg.titlePlaceholder + '">' +
+            '<label>' + cfg.textLabel + '</label>' +
+            '<textarea class="input" id="social-text-' + id + '" placeholder="' + cfg.textPlaceholder + '">' + esc(localStorage.getItem(cfg.textKey) || '') + '</textarea>' +
+            '<div class="social-actions">' +
+              '<button class="btn" id="social-save-' + id + '">💾 Entwurf speichern</button>' +
+              '<button class="btn" id="social-copy-title-' + id + '">📋 Titel kopieren</button>' +
+              '<button class="btn" id="social-copy-text-' + id + '">📋 Text kopieren</button>' +
+              '<button class="btn" id="social-copy-all-' + id + '">📋 Alles kopieren</button>' +
+            '</div>' +
+            '<p class="setting-help">Hinweis: Reines HTML darf externe Upload-Formulare nicht automatisch mit deiner Datei befüllen. Das verhindert der Browser aus Sicherheitsgründen.</p>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    el("social-pick-" + id).addEventListener("click", function () { el("social-file-" + id).click(); });
+    el("social-file-" + id).addEventListener("change", function (e) { socialVideoSelected(id, e.target.files && e.target.files[0]); });
+    el("social-open-" + id).addEventListener("click", function () { window.open(cfg.uploadUrl, "_blank", "noopener"); });
+    el("social-home-" + id).addEventListener("click", function () { window.open(isYoutube ? cfg.studioUrl : "https://www.tiktok.com/", "_blank", "noopener"); });
+    el("social-save-" + id).addEventListener("click", function () { socialSaveDraft(id, cfg); });
+    el("social-copy-title-" + id).addEventListener("click", function () { socialCopy(el("social-title-" + id).value, cfg.name + " Titel"); });
+    el("social-copy-text-" + id).addEventListener("click", function () { socialCopy(el("social-text-" + id).value, cfg.name + " Text"); });
+    el("social-copy-all-" + id).addEventListener("click", function () { socialCopy(el("social-title-" + id).value + "\n\n" + el("social-text-" + id).value, cfg.name + " Entwurf"); });
+  }
+
+  function socialVideoSelected(id, fileObj) {
+    if (!fileObj) return;
+    if (!fileObj.type || fileObj.type.indexOf("video/") !== 0) {
+      showToast("Upload", "Bitte eine Videodatei auswählen.");
+      return;
+    }
+    const state = runningWindows[id].state;
+    if (state.socialObjectUrl) URL.revokeObjectURL(state.socialObjectUrl);
+    state.socialObjectUrl = URL.createObjectURL(fileObj);
+    state.socialFileName = fileObj.name;
+    state.socialFileSize = fileObj.size;
+    const preview = el("social-preview-" + id);
+    preview.innerHTML = '<video class="video-preview" controls src="' + state.socialObjectUrl + '"></video><p class="setting-help">' + esc(fileObj.name) + ' | ' + itemSize({ type: "file", size: fileObj.size }) + '</p>';
+    const titleInput = el("social-title-" + id);
+    if (!titleInput.value.trim()) titleInput.value = fileObj.name.replace(/\.[^.]+$/, "");
+  }
+
+  function socialSaveDraft(id, cfg) {
+    localStorage.setItem(cfg.titleKey, el("social-title-" + id).value);
+    localStorage.setItem(cfg.textKey, el("social-text-" + id).value);
+    showToast(cfg.name, "Entwurf gespeichert.");
+  }
+
+  function socialCopy(text, label) {
+    text = String(text || "");
+    if (!text.trim()) return showToast("Zwischenablage", "Nichts zum Kopieren vorhanden.");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        showToast("Zwischenablage", label + " kopiert.");
+      }).catch(function () {
+        prompt("Kopiere den Text manuell:", text);
+      });
+    } else {
+      prompt("Kopiere den Text manuell:", text);
+    }
+  }
+
   function renderTwitch(id, data) {
     data = data || {};
     const savedChannel = localStorage.getItem("venomOS.twitchChannel") || "venomsnaketwitch";
@@ -2200,7 +2399,7 @@
   }
 
   function renderRun(id) {
-    getCtx(id).innerHTML = '<h3>Ausführen</h3><p style="color:var(--muted); margin:8px 0 12px;">Befehle: explorer, cmd, player, notepad, calc, settings, taskmgr, restart</p><input class="input" id="run-input-' + id + '" placeholder="Befehl eingeben"><br><br><button class="btn" id="run-button-' + id + '">Ausführen</button>';
+    getCtx(id).innerHTML = '<h3>Ausführen</h3><p style="color:var(--muted); margin:8px 0 12px;">Befehle: explorer, cmd, player, youtube, tiktok, twitch, notepad, calc, settings, taskmgr, restart</p><input class="input" id="run-input-' + id + '" placeholder="Befehl eingeben"><br><br><button class="btn" id="run-button-' + id + '">Ausführen</button>';
     el("run-button-" + id).addEventListener("click", function () { executeRun(id); });
     el("run-input-" + id).addEventListener("keydown", function (e) { if (e.key === "Enter") executeRun(id); });
     el("run-input-" + id).focus();
@@ -2219,6 +2418,8 @@
     else if (val === "settings" || val === "einstellungen") openApp("settings");
     else if (val === "taskmgr" || val === "taskmanager") openApp("taskmanager");
     else if (val === "twitch" || val === "chat") openApp("twitch");
+    else if (val === "youtube" || val === "yt") openApp("youtube");
+    else if (val === "tiktok" || val === "toktok" || val === "tt") openApp("tiktok");
     else if (val === "restart") restartOS();
     else showToast("Ausführen", "Befehl nicht gefunden: " + val);
   }
@@ -2235,7 +2436,7 @@
     }
   }
   function renderAbout(id) {
-    getCtx(id).innerHTML = '<h2 style="color:var(--accent); margin-bottom:10px;">VenomOS Ultra Edition</h2><p style="color:var(--muted); line-height:1.5;">HTML-Desktop-Simulation mit funktionierendem Explorer, virtuellem Dateisystem, lokalen Dateien, Import, Download, Kopieren, Ausschneiden, Einfügen, Papierkorb, Terminal, Task-Manager, Einstellungen, Rechner, Browser, Venom Player, Bildgalerie, Profil-Login, OS-Startanimation, eigene Hintergrundbilder, Ausführen-Dialog und Neustart-Sequenz.</p>';
+    getCtx(id).innerHTML = '<h2 style="color:var(--accent); margin-bottom:10px;">VenomOS Ultra Edition</h2><p style="color:var(--muted); line-height:1.5;">HTML-Desktop-Simulation mit funktionierendem Explorer, virtuellem Dateisystem, lokalen Dateien, Import, Download, Kopieren, Ausschneiden, Einfügen, Papierkorb, Terminal, Task-Manager, Einstellungen, Rechner, Browser, Venom Player, Bildgalerie, Twitch, YouTube-Upload, TikTok-Upload, Profil-Login, OS-Startanimation, eigene Hintergrundbilder, Ausführen-Dialog und Neustart-Sequenz.</p>';
   }
 
   function restartOS() {
